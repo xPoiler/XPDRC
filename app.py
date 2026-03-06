@@ -980,12 +980,12 @@ def run_phase1():
                 idx_eval_end = np.argmin(np.abs(freqs - fc*2.0))
                 
                 if idx_eval_end > idx_eval_start:
-                    gains_needed = lfe_mag[idx_eval_start:idx_eval_end] / np.maximum(target_shape[idx_eval_start:idx_eval_end], 1e-12)
+                    gains_needed = lfe_mag[idx_eval_start:idx_eval_end] / np.maximum(hc_shape[idx_eval_start:idx_eval_end], 1e-12)
                     target_anchor = np.percentile(gains_needed, sub_percentile)
                 else:
                     target_anchor = sub_native_level
                     
-                target_curve_lowered = target_shape * target_anchor
+                target_curve_lowered = hc_shape * target_anchor
                 if regularized_inversion:
                     eq_mag = kirkeby_regularized_inverse(lfe_mag, freqs, target_curve_lowered, beta_db=reg_beta_db)
                     eq_mag = np.clip(eq_mag, 1e-4, 1.122)  # Safety: still enforce cut-only ceiling
