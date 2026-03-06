@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+xpdrc_config.json
+.vscode/
+.idea/

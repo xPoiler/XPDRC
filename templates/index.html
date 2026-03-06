@@ -1,0 +1,1931 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XPDRC 1.0 Interface</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --bg-color: #0c0c0e;
+            --surface-color: #16161a;
+            --surface-color-elevated: #1e1e24;
+            --primary-color: #bb86fc;
+            --primary-gradient: linear-gradient(135deg, #bb86fc 0%, #9b68e6 100%);
+            --secondary-color: #03dac6;
+            --secondary-gradient: linear-gradient(135deg, #03dac6 0%, #01b8a5 100%);
+            --text-color: #e0e0e0;
+            --text-muted: #9aa0a6;
+            --border-color: #2c2c35;
+            --shadow-soft: 0 8px 30px rgba(0, 0, 0, 0.4);
+            --shadow-glow: 0 0 15px rgba(187, 134, 252, 0.4);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            /* smooth scrolling for sticky header anchor leaps */
+            scroll-behavior: smooth;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: var(--surface-color);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-color);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--text-color);
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        h1 {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 15px;
+        }
+
+        label {
+            margin-bottom: 6px;
+            font-size: 0.85em;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            padding: 12px;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: white;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: var(--shadow-glow);
+        }
+
+        /* Sticky Header */
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+            margin-bottom: 25px;
+
+            /* Sticky logic */
+            position: sticky;
+            top: 0;
+            background: var(--surface-color);
+            z-index: 100;
+            padding-top: 10px;
+            /* Add a tiny shadow when sticky */
+            box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.5);
+            /* Add white mask background over container padding */
+            margin-left: -30px;
+            margin-right: -30px;
+            padding-left: 30px;
+            padding-right: 30px;
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+        }
+
+        button {
+            background: var(--primary-gradient);
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            box-shadow: 0 4px 10px rgba(187, 134, 252, 0.2);
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(187, 134, 252, 0.35);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .btn-secondary {
+            background: var(--surface-color-elevated);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover {
+            background: #2a2a35;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-run {
+            background: var(--secondary-gradient);
+            color: #000;
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1em;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(3, 218, 198, 0.2);
+        }
+
+        .btn-run:hover {
+            box-shadow: 0 6px 20px rgba(3, 218, 198, 0.4);
+        }
+
+        .section {
+            border: 1px solid var(--border-color);
+            background: var(--surface-color-elevated);
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .section:hover {
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #console-output {
+            background: #09090b;
+            color: #03dac6;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            padding: 20px;
+            border-radius: 8px;
+            height: 200px;
+            overflow-y: auto;
+            margin-top: 25px;
+            white-space: pre-wrap;
+            border: 1px solid var(--border-color);
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
+            font-size: 0.9em;
+        }
+
+        details {
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            background: var(--surface-color-elevated);
+            transition: all 0.3s ease;
+        }
+
+        summary {
+            font-weight: 600;
+            color: var(--text-color);
+            cursor: pointer;
+            margin-bottom: 10px;
+            outline: none;
+            user-select: none;
+        }
+
+        /* Wizard Modal Styles */
+        #wizard-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        #wizard-modal.hidden {
+            display: none !important;
+        }
+
+        .wizard-content {
+            background: var(--surface-color);
+            padding: 40px;
+            border-radius: 16px;
+            max-width: 650px;
+            width: 100%;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--primary-color);
+        }
+
+        .wizard-step {
+            display: none;
+        }
+
+        .wizard-step.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .wizard-footer {
+            margin-top: 35px;
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid var(--border-color);
+            padding-top: 25px;
+        }
+
+        /* Loading Spinner */
+        .loader {
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--secondary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Tooltip Styles */
+        .tooltip {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: help;
+            background: var(--surface-color-elevated);
+            border: 1px solid #444;
+            color: var(--text-muted);
+            border-radius: 50%;
+            width: 14px;
+            height: 14px;
+            text-align: center;
+            font-size: 10px;
+            line-height: 1;
+            margin-left: 6px;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+
+        .tooltip:hover {
+            background: var(--secondary-color);
+            color: #000;
+            border-color: var(--secondary-color);
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 240px;
+            background-color: var(--surface-color);
+            color: var(--text-color);
+            text-align: left;
+            border-radius: 8px;
+            padding: 12px;
+            position: absolute;
+            z-index: 10000;
+            bottom: 150%;
+            left: 50%;
+            margin-left: -120px;
+            opacity: 0;
+            transform: translateY(5px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            font-size: 0.9em;
+            font-weight: 400;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            line-height: 1.5;
+            pointer-events: none;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Tooltip simple arrow */
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: var(--border-color) transparent transparent transparent;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Floating Reset Button */
+        #floating-reset {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            background: rgba(22, 22, 26, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 82, 82, 0.3);
+            padding: 12px 20px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 2000;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(255, 82, 82, 0.1);
+            color: #ff5252;
+            font-weight: 600;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0;
+            transform: translateY(20px) scale(0.9);
+            pointer-events: none;
+            user-select: none;
+        }
+
+        #floating-reset.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+
+        #floating-reset:hover {
+            background: rgba(255, 82, 82, 0.15);
+            border-color: #ff5252;
+            box-shadow: 0 15px 40px rgba(255, 82, 82, 0.2);
+            transform: translateY(-2px) scale(1.02);
+        }
+
+        #floating-reset:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        #floating-reset .icon {
+            font-size: 1.2em;
+        }
+    </style>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header-actions">
+            <h1>XPDRC 1.0 Web DSP</h1>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button type="button" class="btn-run"
+                    style="margin: 0; padding: 10px 15px; width: auto; font-size: 1rem;" onclick="startWizard()">✨ Run
+                    Setup Wizard</button>
+                <button class="btn-secondary" onclick="document.getElementById('file-input').click()">📂 Import
+                    Config</button>
+                <input type="file" id="file-input" class="hidden" accept=".json" onchange="importConfig(event)">
+                <div style="position: relative;">
+                    <a href="/docs"
+                        style="position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 12px; color: white; font-size: 0.85em; text-decoration: underline; text-underline-offset: 4px; font-weight: 500; white-space: nowrap; opacity: 0.9; transition: opacity 0.2s;"
+                        onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.9'">📖 Documentation</a>
+                    <button class="btn-secondary" onclick="exportConfig()" style="margin: 0;">💾 Export Config</button>
+                </div>
+            </div>
+        </div>
+
+        <form id="config-form">
+            <div class="grid">
+                <div class="section">
+                    <h3>System IDs & Crosssover</h3>
+                    <div class="form-group">
+                        <label>Mains REW IDs (comma separated, e.g., 1,2) <span class="tooltip">?<span
+                                    class="tooltiptext">Comma-separated measurement IDs in REW corresponding to your
+                                    main speakers.</span></span></label>
+                        <input type="text" id="mains_ids" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Subwoofer REW ID <span class="tooltip">?<span class="tooltiptext">The measurement ID in
+                                    REW corresponding to your subwoofer.</span></span></label>
+                        <input type="text" id="lfe_id">
+                    </div>
+                    <div class="form-group">
+                        <label>Crossover Frequency (Hz) <span class="tooltip">?<span class="tooltiptext">The frequency
+                                    point where bass is transitioned from mains to the subwoofer.</span></span></label>
+                        <input type="number" id="fc" value="80" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Target Base Delay (ms) <span class="tooltip">?<span class="tooltiptext">Added baseline
+                                    delay to anchor the filter generation. Use 100ms+ for best deep bass correction
+                                    (movies/music). Keep under 50ms for low latency (gaming/desktop
+                                    use).</span></span></label>
+                        <input type="number" id="delay_ms" value="100" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Mains Crossover Type <span class="tooltip">?<span class="tooltiptext">The filter topology
+                                    and slope applied to the high-pass side of the mains.</span></span></label>
+                        <select id="crossover_mains">
+                            <option value="none">None (Bypass)</option>
+                            <option value="lr2">Linkwitz-Riley 12dB/oct</option>
+                            <option value="lr4" selected>Linkwitz-Riley 24dB/oct</option>
+                            <option value="lr8">Linkwitz-Riley 48dB/oct</option>
+                            <option value="bw2">Butterworth 12dB/oct</option>
+                            <option value="bw3">Butterworth 18dB/oct</option>
+                            <option value="bw4">Butterworth 24dB/oct</option>
+                            <option value="bs2">Bessel 12dB/oct</option>
+                            <option value="bs4">Bessel 24dB/oct</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Subwoofer Crossover Type <span class="tooltip">?<span class="tooltiptext">The filter
+                                    topology and slope applied to the low-pass side of the
+                                    subwoofer.</span></span></label>
+                        <select id="crossover_sub">
+                            <option value="none">None (Bypass)</option>
+                            <option value="lr2">Linkwitz-Riley 12dB/oct</option>
+                            <option value="lr4" selected>Linkwitz-Riley 24dB/oct</option>
+                            <option value="lr8">Linkwitz-Riley 48dB/oct</option>
+                            <option value="bw2">Butterworth 12dB/oct</option>
+                            <option value="bw3">Butterworth 18dB/oct</option>
+                            <option value="bw4">Butterworth 24dB/oct</option>
+                            <option value="bs2">Bessel 12dB/oct</option>
+                            <option value="bs4">Bessel 24dB/oct</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Mains Crossover Phase <span class="tooltip">?<span class="tooltiptext">Determines whether
+                                    the mains crossover introduces phase shift (minimum) or remains perfectly
+                                    phase-aligned (linear).</span></span></label>
+                        <select id="phase_mains">
+                            <option value="linear" selected>Linear Phase</option>
+                            <option value="minimum">Minimum Phase</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Subwoofer Crossover Phase <span class="tooltip">?<span class="tooltiptext">Determines
+                                    whether the sub crossover introduces phase shift (minimum) or remains perfectly
+                                    phase-aligned (linear).</span></span></label>
+                        <select id="phase_sub">
+                            <option value="linear" selected>Linear Phase</option>
+                            <option value="minimum">Minimum Phase</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>House Curve</h3>
+                    <div class="form-group">
+                        <label>Bass Boost (+dB) <span class="tooltip">?<span class="tooltiptext">The maximum decibel
+                                    increase applied to the low-end of your target house curve.</span></span></label>
+                        <input type="number" id="house_boost" value="6" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Slope Start (Hz) <span class="tooltip">?<span class="tooltiptext">The frequency where the
+                                    bass boost slope begins to rise.</span></span></label>
+                        <input type="number" id="house_start" value="120">
+                    </div>
+                    <div class="form-group">
+                        <label>Slope End (Hz) <span class="tooltip">?<span class="tooltiptext">The frequency where the
+                                    bass boost slope reaches its maximum level.</span></span></label>
+                        <input type="number" id="house_end" value="20">
+                    </div>
+                    <div class="form-group">
+                        <label>Custom House Curve (.txt optional) <span class="tooltip">?<span
+                                    class="tooltiptext">Upload a text file defining a custom frequency and amplitude
+                                    target curve.</span></span></label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="file" id="house_curve_file" accept=".txt" style="flex-grow: 1;"
+                                onchange="loadHouseCurveFile(event)">
+                            <button type="button" class="btn-secondary" onclick="clearHouseCurveFile()"
+                                style="padding: 10px;" title="Clear File">❌</button>
+                        </div>
+                        <p id="house_curve_status" style="font-size: 0.8em; color: #aaa; margin-top: 5px;">No custom
+                            curve loaded. Using parameters above.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="house_curve_plot_container" class="section hidden">
+                <h3 style="margin-top: 0;">Uploaded Curve Verification</h3>
+                <div id="house_curve_plot" style="width: 100%; height: 200px;"></div>
+            </div>
+
+            <div class="section">
+                <h3>Acoustic Delays (ms)</h3>
+                <div class="form-group"
+                    style="flex-direction: row; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <input type="checkbox" id="auto_align_enabled" checked>
+                    <label for="auto_align_enabled" style="margin: 0; font-size: 1em;">Auto Time-Align (from REW IR peak
+                        times)</label>
+                </div>
+                <p id="delay-manual-hint" style="font-size: 0.85em; color: #aaa; display: none;">Enter the raw delay for
+                    each speaker ID. Use 0.0 for your
+                    timing reference.</p>
+                <p id="delay-auto-hint" style="font-size: 0.85em; color: var(--secondary-color);">Delays will be
+                    auto-detected from REW measurement IR peaks.</p>
+                <div class="grid" id="dynamic-delays-container" style="opacity: 0.35; pointer-events: none;">
+                    <p style="color: #777; grid-column: span 2; margin-top: 0;">Enter Mains or Subwoofer IDs above to
+                        generate delay inputs.</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Virtual Bass Array (Subwoofer Only)</h3>
+                <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="vba_enabled">
+                    <label for="vba_enabled" style="margin: 0; font-size: 1em;">Enable VBA <span class="tooltip">?<span
+                                class="tooltiptext">Activates a Virtual Bass Array to actively cancel specific room mode
+                                reflections.</span></span></label>
+                </div>
+                <div class="grid" id="vba-settings" style="opacity: 0.5; pointer-events: none; margin-top: 15px;">
+                    <div class="form-group">
+                        <label>Manual Modes (Hz, comma separated. Leave blank for Auto-Detect) <span
+                                class="tooltip">?<span class="tooltiptext">Comma-separated list of room mode frequencies
+                                    to cancel; leave blank for automatic detection.</span></span></label>
+                        <input type="text" id="vba_modes">
+                    </div>
+                    <div class="form-group">
+                        <label>Reflection Attenuation per bounce (-dB) <span class="tooltip">?<span
+                                    class="tooltiptext">The expected attenuation level (volume drop) of each successive
+                                    room reflection.</span></span></label>
+                        <input type="number" id="vba_attn_db" value="-3.0" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Taps (bounces to cancel) <span class="tooltip">?<span class="tooltiptext">The number of
+                                    sequential room reflections the VBA should attempt to cancel.</span></span></label>
+                        <input type="number" id="vba_taps" value="4">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Processing Features</h3>
+
+                <!-- Mains Processing -->
+                <p
+                    style="font-size: 0.8em; color: var(--secondary-color); margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">
+                    Mains</p>
+                <div class="grid" style="margin-bottom: 15px;">
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="mains_eq_enabled" checked>
+                        <label for="mains_eq_enabled" style="margin: 0; font-size: 1em;">Magnitude EQ <span
+                                class="tooltip">?<span class="tooltiptext">Flattens the frequency response amplitude of
+                                    the main speakers.</span></span></label>
+                    </div>
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="mains_phase_lin_enabled" checked>
+                        <label for="mains_phase_lin_enabled" style="margin: 0; font-size: 1em;">Phase
+                            Linearization</label>
+                    </div>
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="vol_align_enabled" checked>
+                        <label for="vol_align_enabled" style="margin: 0; font-size: 1em;">Volume Alignment <span
+                                class="tooltip">?<span class="tooltiptext">Automatically adjusts the overall volume of
+                                    the speakers to match.</span></span></label>
+                    </div>
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="mains_bandlimit_high_enabled">
+                        <label for="mains_bandlimit_high_enabled" style="margin: 0; font-size: 1em;">No Correction
+                            Above</label>
+                        <div id="mains_bandlimit_high_setting" style="opacity: 0.5; pointer-events: none;">
+                            <input type="number" id="mains_bandlimit_high_hz" value="10000" step="100"
+                                style="width: 90px;" title="Mains High Cutoff (Hz)">
+                        </div>
+                        <span id="mains_bandlimit_high_unit"
+                            style="font-size: 0.85em; color: #aaa; opacity: 0.5;">Hz</span>
+                    </div>
+                </div>
+
+                <!-- Subwoofer Processing -->
+                <p
+                    style="font-size: 0.8em; color: var(--secondary-color); margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">
+                    Subwoofer</p>
+                <div class="grid" style="margin-bottom: 15px;">
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="sub_eq_enabled" checked>
+                        <label for="sub_eq_enabled" style="margin: 0; font-size: 1em;">Magnitude EQ (House
+                            Curve)</label>
+                    </div>
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="sub_gd_eq_enabled" checked>
+                        <label for="sub_gd_eq_enabled" style="margin: 0; font-size: 1em;">Group Delay EQ <span
+                                class="tooltip">?<span class="tooltiptext">Equalizes the subwoofer's group delay to
+                                    minimize time-smearing.</span></span></label>
+                    </div>
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="sub_bandlimit_low_enabled">
+                        <label for="sub_bandlimit_low_enabled" style="margin: 0; font-size: 1em;">No Correction
+                            Below</label>
+                    </div>
+                    <div class="form-group" id="sub_bandlimit_low_setting" style="opacity: 0.5; pointer-events: none;">
+                        <label>Low Cutoff (Hz) <span class="tooltip">?<span class="tooltiptext">The boundary frequency
+                                    for low-frequency EQ corrections.</span></span></label>
+                        <input type="number" id="sub_bandlimit_low_hz" value="15" step="1">
+                    </div>
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="sub_bandlimit_high_enabled">
+                        <label for="sub_bandlimit_high_enabled" style="margin: 0; font-size: 1em;">No Correction
+                            Above</label>
+                    </div>
+                    <div class="form-group" id="sub_bandlimit_high_setting" style="opacity: 0.5; pointer-events: none;">
+                        <label>High Cutoff (Hz) <span class="tooltip">?<span class="tooltiptext">The boundary frequency
+                                    for high-frequency EQ corrections.</span></span></label>
+                        <input type="number" id="sub_bandlimit_high_hz" value="150" step="1">
+                    </div>
+                </div>
+
+                <!-- Phase & Advanced -->
+                <p
+                    style="font-size: 0.8em; color: var(--secondary-color); margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">
+                    Phase & Inversion</p>
+                <div class="grid">
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="preringing_reduction" checked>
+                        <label for="preringing_reduction" style="margin: 0; font-size: 1em;">Preringing Reduction
+                            (PRC)</label>
+                    </div>
+                    <div class="form-group" id="prc_freq_setting">
+                        <label>PRC Transition (Hz) <span class="tooltip">?<span class="tooltiptext">The frequency at
+                                    which the preringing reduction algorithm takes effect.</span></span></label>
+                        <input type="number" id="prc_freq_hz" value="1000" step="1">
+                    </div>
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="mixed_phase_enabled">
+                        <label for="mixed_phase_enabled" style="margin: 0; font-size: 1em;">Mixed-Phase Filter
+                            Design</label>
+                    </div>
+                    <div class="form-group" id="mixed_phase_crossover_setting">
+                        <label>Mixed-Phase Crossover (Hz) <span class="tooltip">?<span class="tooltiptext">The
+                                    transition point where the filter switches from minimum-phase to
+                                    linear-phase.</span></span></label>
+                        <input type="number" id="mixed_phase_crossover_hz" value="500" step="10"
+                            title="Below: min-phase (no preringing). Above: linear-phase (transient accuracy).">
+                    </div>
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="regularized_inversion">
+                        <label for="regularized_inversion" style="margin: 0; font-size: 1em;">Regularized Inversion
+                            (Kirkeby)</label>
+                    </div>
+                    <div class="form-group" id="reg_beta_setting">
+                        <label>Regularization (β dB) <span class="tooltip">?<span class="tooltiptext">The strength of
+                                    regularization applied; higher values result in gentler, safer EQ
+                                    corrections.</span></span></label>
+                        <input type="number" id="reg_beta_db" value="12.0" step="0.5"
+                            title="Higher = gentler correction. 12 dB is a good psychoacoustic compromise.">
+                    </div>
+                </div>
+            </div>
+
+            <details>
+                <summary>⚙️ Advanced DSP Settings</summary>
+                <div class="grid">
+                    <div class="form-group">
+                        <label>Sample Rate (Hz) <span class="tooltip">?<span class="tooltiptext">The sampling rate of
+                                    the generated FIR filters.</span></span></label>
+                        <select id="sample_rate">
+                            <option value="44100">44100</option>
+                            <option value="48000" selected>48000</option>
+                            <option value="96000">96000</option>
+                            <option value="192000">192000</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Filter Taps <span class="tooltip">?<span class="tooltiptext">The resolution lengths of
+                                    the generated FIR filters; higher values offer more bass
+                                    precision.</span></span></label>
+                        <select id="filter_taps">
+                            <option value="4096">4096 (miniDSP)</option>
+                            <option value="8192">8192</option>
+                            <option value="16384">16384</option>
+                            <option value="32768">32768</option>
+                            <option value="65536" selected>65536 (PC/Convolver)</option>
+                            <option value="131072">131072</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>REW API URL <span class="tooltip">?<span class="tooltiptext">The network address for the
+                                    active Room EQ Wizard API server instance.</span></span></label>
+                        <input type="text" id="rew_api_url" value="http://localhost:4735">
+                    </div>
+                    <div class="form-group">
+                        <label>Mains FDW Cycles <span class="tooltip">?<span class="tooltiptext">The frequency-dependent
+                                    window size used to smooth main speaker measurements.</span></span></label>
+                        <input type="number" id="fdw_cycles" value="5.0" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>EQ Transition Band (Start Hz) <span class="tooltip">?<span class="tooltiptext">The lower
+                                    frequency defining the transition window for blending smoothed
+                                    EQ.</span></span></label>
+                        <input type="number" id="trans_start" value="200" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label>EQ Transition Band (End Hz) <span class="tooltip">?<span class="tooltiptext">The upper
+                                    frequency defining the transition window for blending smoothed
+                                    EQ.</span></span></label>
+                        <input type="number" id="trans_end" value="300" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Mains Max Low Boost (+dB) <span class="tooltip">?<span class="tooltiptext">The maximum
+                                    allowed EQ boost for low frequencies on the main speakers.</span></span></label>
+                        <input type="number" id="max_boost_low" value="6.0" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Mains Max High Boost (+dB) <span class="tooltip">?<span class="tooltiptext">The maximum
+                                    allowed EQ boost for high frequencies on the main speakers.</span></span></label>
+                        <input type="number" id="max_boost_high" value="3.0" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Sub Target Anchor Percentile <span class="tooltip">?<span class="tooltiptext">Adjusts the
+                                    relative volume target anchor for the subwoofer EQ generation.</span></span></label>
+                        <input type="number" id="sub_percentile" value="15" step="1"
+                            title="Lower = cuts more, anchors lower.">
+                    </div>
+                    <div class="form-group">
+                        <label>Global EQ Smoothing <span class="tooltip">?<span class="tooltiptext">The smoothing
+                                    algorithm applied strictly to the global system EQ pass.</span></span></label>
+                        <select id="global_smoothing">
+                            <option value="erb" selected>ERB</option>
+                            <option value="variable">Variable</option>
+                            <option value="48">1/48 Octave</option>
+                            <option value="24">1/24 Octave</option>
+                            <option value="12">1/12 Octave</option>
+                            <option value="6">1/6 Octave</option>
+                            <option value="3">1/3 Octave</option>
+                            <option value="1">1/1 Octave</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Volume Match Range (Low Hz - High Hz) <span class="tooltip">?<span
+                                    class="tooltiptext">The frequency range evaluated to compute and match speaker
+                                    volumes.</span></span></label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="number" id="vol_match_low" value="500" step="1" style="width: 100%;">
+                            <input type="number" id="vol_match_high" value="2000" step="1" style="width: 100%;">
+                        </div>
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <p
+                            style="font-size: 0.8em; color: var(--secondary-color); margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">
+                            Manual Rolloff Overrides (0 = Auto-Detect)</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Mains Low Rolloff (Hz) <span class="tooltip">?<span class="tooltiptext">Manually sets the
+                                    low frequency limits of the main speakers.</span></span></label>
+                        <input type="number" id="mains_low_rolloff_hz" value="0" step="1"
+                            title="Override auto low-end rolloff detection. 0 = auto-detect from measurement.">
+                    </div>
+                    <div class="form-group">
+                        <label>Mains High Rolloff (Hz) <span class="tooltip">?<span class="tooltiptext">Manually sets
+                                    the high frequency limits of the main speakers.</span></span></label>
+                        <input type="number" id="mains_high_rolloff_hz" value="0" step="1"
+                            title="Override auto high-end rolloff detection. 0 = auto-detect from measurement.">
+                    </div>
+                    <div class="form-group">
+                        <label>Sub Low Rolloff (Hz) <span class="tooltip">?<span class="tooltiptext">Manually sets the
+                                    low frequency limits of the subwoofer.</span></span></label>
+                        <input type="number" id="sub_low_rolloff_hz" value="0" step="1"
+                            title="Override auto sub low-end rolloff detection. 0 = auto-detect.">
+                    </div>
+                    <div class="form-group">
+                        <label>Sub High Rolloff (Hz) <span class="tooltip">?<span class="tooltiptext">Manually sets the
+                                    high frequency limits of the subwoofer.</span></span></label>
+                        <input type="number" id="sub_high_rolloff_hz" value="0" step="1"
+                            title="Override auto sub high-end rolloff detection. 0 = auto-detect.">
+                    </div>
+                </div>
+            </details>
+
+            <button type="button" class="btn-run" onclick="runPhase1()">▶ 1. Generate Base FIRs</button>
+        </form>
+
+        <div id="phase-2-section" class="section hidden"
+            style="border-color: var(--secondary-color); margin-top: 20px;">
+            <h3 style="color: var(--secondary-color);">Phase 2: Final Alignment & Global EQ</h3>
+            <p style="font-size: 0.9em; color: #ccc;">Load your Base FIRs into your DSP, align the delay, and optionally
+                take a new combined measurement in REW.</p>
+            <div class="grid">
+                <div class="form-group"
+                    style="flex-direction: row; align-items: center; gap: 10px; grid-column: span 2;">
+                    <input type="checkbox" id="auto_sub_alignment" checked>
+                    <label for="auto_sub_alignment" style="margin: 0; font-size: 1em;">Automate Subwoofer Alignment
+                        (Match Mains Group Delay)</label>
+                </div>
+                <div class="form-group" id="manual_sub_delay_setting" style="opacity: 0.5; pointer-events: none;">
+                    <label>Manual Subwoofer Delay applied in REW (ms) <span class="tooltip">?<span class="tooltiptext">A
+                                manual time offset applied strictly to the subwoofer's delay
+                                alignment.</span></span></label>
+                    <input type="number" id="align_lfe_ms" value="0.0" step="0.01">
+                </div>
+                <div class="form-group"
+                    style="flex-direction: row; align-items: center; gap: 10px; grid-column: span 2;">
+                    <input type="checkbox" id="auto_rew_import" checked>
+                    <label for="auto_rew_import"
+                        style="margin: 0; font-size: 1em; color: var(--secondary-color); font-weight: bold;">Auto-Process
+                        Phase 2 in REW (Import, Multiply, Average)</label>
+                </div>
+                <div class="form-group" id="global_id_setting" style="opacity: 0.5; pointer-events: none;">
+                    <label>Global Measurement REW ID (Leave blank if Auto-Processing) <span class="tooltip">?<span
+                                class="tooltiptext">The ID of a combined system measurement for generating the final
+                                Global EQ layer.</span></span></label>
+                    <input type="text" id="global_id" placeholder="e.g., 5">
+                </div>
+                <div class="form-group"
+                    style="flex-direction: row; align-items: center; gap: 10px; grid-column: span 2;">
+                    <input type="checkbox" id="global_eq_enabled" checked>
+                    <label for="global_eq_enabled" style="margin: 0; font-size: 1em;">Enable Global EQ
+                        Generation</label>
+                </div>
+                <div class="form-group"
+                    style="flex-direction: row; align-items: center; gap: 10px; grid-column: span 2;">
+                    <input type="checkbox" id="global_eq_apply_freq_limits">
+                    <label for="global_eq_apply_freq_limits" style="margin: 0; font-size: 1em;">Apply EQ
+                        Frequency Limits to Global EQ</label>
+                </div>
+                <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="auto_target_curve" checked>
+                    <label for="auto_target_curve" style="margin: 0; font-size: 1em;">Auto-Target Curve (Preserve
+                        Speaker Character)</label>
+                </div>
+                <div class="form-group">
+                    <label>Auto-Target Start (Hz) <span class="tooltip">?<span class="tooltiptext">The frequency where
+                                the dynamic automatic target curve evaluation begins tracking the
+                                speaker.</span></span></label>
+                    <input type="number" id="auto_target_start_hz" value="2000" step="10">
+                </div>
+            </div>
+            <button type="button" class="btn-run" onclick="runPhase2()">▶ 2. Bake Final FIRs & Global EQ</button>
+        </div>
+
+        <div id="console-output">Ready...</div>
+    </div>
+
+    <!-- Setup Wizard Modal -->
+    <div id="wizard-modal" class="hidden">
+        <div class="wizard-content">
+            <h2 id="wizard-title" style="margin-top: 0;">Automated Measurement Setup</h2>
+            <p id="wizard-desc" style="color: #aaa; margin-bottom: 25px;">This wizard will guide you through taking
+                multi-position REW measurements and automatically align them for spatial averaging.</p>
+
+            <!-- Step 1: Device Setup -->
+            <div id="wizard-step-1" class="wizard-step active">
+                <div class="form-group">
+                    <p style="text-align: left; font-size: 0.95em; color: #ddd; margin-bottom: 20px;">
+                        <strong>Important:</strong> Because REW requires a "Pro License" to automate
+                        sweeps via its API, this wizard is designed to work manually with the <strong>Free</strong>
+                        version of
+                        REW.
+                    </p>
+                    <p style="text-align: left; font-size: 0.9em; color: #bbb;">
+                        1. Open REW, go to preferences, and start the <strong>API Server</strong>.<br>
+                        2. Open the <strong>Measure</strong> dialog.<br>
+                        3. Set Range to <strong>0 to 24000 Hz</strong>.<br>
+                        4. Set Level to <strong>-12.0 dBFS</strong>.<br>
+                        5. Set Timing to <strong>Acoustic Timing Reference</strong>. (Use <strong>C</strong> if you have
+                        a center channel, otherwise use <strong>L</strong>).
+                    </p>
+                </div>
+                <div class="form-group">
+                    <label>Speakers you will measure</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                        <label><input type="checkbox" class="wiz-ch" value="L" checked> Left (L)</label>
+                        <label><input type="checkbox" class="wiz-ch" value="R" checked> Right (R)</label>
+                        <label><input type="checkbox" class="wiz-ch" value="C"> Center (C)</label>
+                        <label><input type="checkbox" class="wiz-ch" value="LFE" checked> Subwoofer (LFE)</label>
+                        <label><input type="checkbox" class="wiz-ch" value="SL"> Surround L (SL)</label>
+                        <label><input type="checkbox" class="wiz-ch" value="SR"> Surround R (SR)</label>
+                        <label><input type="checkbox" class="wiz-ch" value="BL"> Back L (BL)</label>
+                        <label><input type="checkbox" class="wiz-ch" value="BR"> Back R (BR)</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Measuring Loop -->
+            <div id="wizard-step-2" class="wizard-step">
+                <h3 id="wiz_pos_title" style="text-align: center; color: var(--secondary-color);">Position 1</h3>
+                <p id="wiz_pos_instr" style="text-align: center; font-size: 1.1em; margin-bottom: 20px;">
+                    Place the microphone exactly at your Main Listening Position (MLP). This will be the timing anchor.
+                </p>
+
+                <div
+                    style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: left;">
+                    <div id="wiz_ch_progress"
+                        style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px;">
+                        <!-- Filled by JS -->
+                    </div>
+                    <p style="margin:0; color: var(--secondary-color); font-weight: bold; font-size: 1.2em; text-align: center;"
+                        id="wiz_ch_instr">
+                        Measure: <span id="wiz_current_ch"
+                            style="color: #fff; background: var(--secondary-color); padding: 2px 8px; border-radius: 4px;">L</span>
+                    </p>
+                    <p style="font-size: 0.9em; color: #ddd; margin-top: 15px; text-align: center;">In REW, select the
+                        correct output channel for this speaker and click <strong>Start Measuring</strong>.</p>
+                </div>
+
+                <div id="wiz_measuring_state" style="text-align: center;">
+                    <div class="loader"></div>
+                    <p id="wiz_poll_status" style="color: var(--secondary-color); font-weight: bold; margin-top: 15px;">
+                        Waiting for new measurement in REW...</p>
+                </div>
+            </div>
+
+            <!-- Step 3: Processing -->
+            <div id="wizard-step-3" class="wizard-step" style="text-align: center;">
+                <h3 style="color: var(--secondary-color);">Aligning & Averaging</h3>
+                <div class="loader"></div>
+                <p>Cross-correlating off-center measurements to MLP and computing spatial averages...</p>
+                <p style="font-size: 0.85em; color: #888;">This may take a minute depending on the number of positions.
+                </p>
+            </div>
+
+            <!-- Step 4: Finished -->
+            <div id="wizard-step-4" class="wizard-step" style="text-align: center;">
+                <h3 style="color: var(--secondary-color);">🎉 Setup Complete</h3>
+                <p>The spatial averages have been computed and sent to REW.</p>
+                <p>The system has automatically populated your configuration with the new measurement IDs.</p>
+                <p style="font-size: 0.85em; color: #888; margin-top: 20px;">You can now review the advanced DSP
+                    settings or proceed directly to Phase 1.</p>
+            </div>
+
+            <div class="wizard-footer" id="wizard-footer">
+                <button type="button" class="btn-secondary" id="wiz_btn_cancel" onclick="closeWizard()">Cancel</button>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn-secondary hidden" id="wiz_btn_skip"
+                        onclick="finishMeasurements()">Skip Remaining / Finish</button>
+                    <button type="button" class="btn-run" style="margin: 0; padding: 10px 20px; width: auto;"
+                        id="wiz_btn_next" onclick="nextWizardStep()">Next ➔</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Reset Button -->
+    <div id="floating-reset" onclick="resetToDefaults()">
+        <span class="icon">↺</span>
+        <span>Reset Defaults</span>
+    </div>
+
+    <script>
+        let customHouseCurveB64 = "";
+        let initialFormState = "";
+
+        // Capture initial state to detect changes
+        window.addEventListener('load', () => {
+            // Wait a bit for any auto-fills or script populations
+            setTimeout(() => {
+                initialFormState = JSON.stringify(getFormData());
+                startChangeDetection();
+            }, 500);
+        });
+
+        function startChangeDetection() {
+            const form = document.getElementById('config-form');
+            form.addEventListener('input', checkStateChange);
+            form.addEventListener('change', checkStateChange);
+
+            // Also watch for custom house curve changes
+            const originalLoadHC = loadHouseCurveFile;
+            window.loadHouseCurveFile = (e) => {
+                originalLoadHC(e);
+                // The load is async but the status change is fast enough
+                setTimeout(checkStateChange, 100);
+            };
+
+            const originalClearHC = clearHouseCurveFile;
+            window.clearHouseCurveFile = () => {
+                originalClearHC();
+                checkStateChange();
+            };
+
+            const originalAutoPop = autoPopulateConfig;
+            window.autoPopulateConfig = (ids) => {
+                originalAutoPop(ids);
+                checkStateChange();
+            };
+        }
+
+        function checkStateChange() {
+            const currentState = JSON.stringify(getFormData());
+            const resetBtn = document.getElementById('floating-reset');
+
+            if (currentState !== initialFormState) {
+                resetBtn.classList.add('visible');
+            } else {
+                resetBtn.classList.remove('visible');
+            }
+        }
+
+        function loadHouseCurveFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const textContent = e.target.result;
+
+                // Simple validation to check if it has valid numbers
+                let hasValidLine = false;
+                const lines = textContent.split('\n');
+                for (let line of lines) {
+                    line = line.trim();
+                    if (!line || line.startsWith('*') || line.startsWith('//') || line.startsWith('#')) continue;
+                    const parts = line.split(/[ \t]+/);
+                    if (parts.length >= 2 && !isNaN(parseFloat(parts[0])) && !isNaN(parseFloat(parts[1]))) {
+                        hasValidLine = true;
+                        break;
+                    }
+                }
+
+                if (!hasValidLine) {
+                    document.getElementById('house_curve_status').innerText = `❌ Error: '${file.name}' is not a valid REW House Curve format. Expected pairs of numbers (Freq dB).`;
+                    document.getElementById('house_curve_status').style.color = '#ff5252';
+                    document.getElementById('house_curve_file').value = "";
+                    customHouseCurveB64 = "";
+                    document.getElementById('house_curve_plot_container').classList.add('hidden');
+                    return;
+                }
+
+                // If valid, convert to base64 for API transmission
+                const base64Str = btoa(textContent);
+                customHouseCurveB64 = base64Str;
+                document.getElementById('house_curve_status').innerText = `Loaded: ${file.name}`;
+                document.getElementById('house_curve_status').style.color = 'var(--secondary-color)';
+                previewHouseCurve();
+            };
+            reader.readAsText(file);
+        }
+
+        function clearHouseCurveFile() {
+            document.getElementById('house_curve_file').value = "";
+            customHouseCurveB64 = "";
+            document.getElementById('house_curve_status').innerText = "No custom curve loaded. Using parameters above.";
+            document.getElementById('house_curve_status').style.color = '#aaa';
+            document.getElementById('house_curve_plot_container').classList.add('hidden');
+            if (document.getElementById('house_curve_plot').data) Plotly.purge('house_curve_plot');
+        }
+
+        async function previewHouseCurve() {
+            if (!customHouseCurveB64) return;
+            try {
+                const res = await fetch('/api/preview_house_curve', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ custom_house_curve: customHouseCurveB64 })
+                });
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    document.getElementById('house_curve_plot_container').classList.remove('hidden');
+                    const trace = {
+                        x: data.freqs,
+                        y: data.dbs,
+                        type: 'scatter',
+                        mode: 'lines',
+                        line: { color: '#03dac6', width: 2 }
+                    };
+                    const layout = {
+                        paper_bgcolor: '#1e1e1e',
+                        plot_bgcolor: '#1e1e1e',
+                        font: { color: '#e0e0e0', size: 10 },
+                        margin: { l: 40, r: 20, t: 10, b: 20 },
+                        xaxis: {
+                            type: 'log',
+                            title: 'Hz',
+                            gridcolor: '#333'
+                        },
+                        yaxis: {
+                            title: 'dB',
+                            gridcolor: '#333'
+                        }
+                    };
+                    Plotly.newPlot('house_curve_plot', [trace], layout, { responsive: true, displayModeBar: false });
+                } else {
+                    log("❌ Preview Error: " + data.message);
+                }
+            } catch (err) {
+                log("❌ Preview Network Error: " + err);
+            }
+        }
+
+        document.getElementById('auto_align_enabled').addEventListener('change', function (e) {
+            const container = document.getElementById('dynamic-delays-container');
+            const autoHint = document.getElementById('delay-auto-hint');
+            const manualHint = document.getElementById('delay-manual-hint');
+            if (e.target.checked) {
+                container.style.opacity = '0.35';
+                container.style.pointerEvents = 'none';
+                autoHint.style.display = '';
+                manualHint.style.display = 'none';
+            } else {
+                container.style.opacity = '1';
+                container.style.pointerEvents = 'auto';
+                autoHint.style.display = 'none';
+                manualHint.style.display = '';
+            }
+        });
+
+        document.getElementById('vba_enabled').addEventListener('change', function (e) {
+            const panel = document.getElementById('vba-settings');
+            if (e.target.checked) {
+                panel.style.opacity = '1';
+                panel.style.pointerEvents = 'auto';
+            } else {
+                panel.style.opacity = '0.5';
+                panel.style.pointerEvents = 'none';
+            }
+        });
+
+        document.getElementById('sub_bandlimit_low_enabled').addEventListener('change', function (e) {
+            const panel = document.getElementById('sub_bandlimit_low_setting');
+            panel.style.opacity = e.target.checked ? '1' : '0.5';
+            panel.style.pointerEvents = e.target.checked ? 'auto' : 'none';
+        });
+
+        document.getElementById('sub_bandlimit_high_enabled').addEventListener('change', function (e) {
+            const panel = document.getElementById('sub_bandlimit_high_setting');
+            panel.style.opacity = e.target.checked ? '1' : '0.5';
+            panel.style.pointerEvents = e.target.checked ? 'auto' : 'none';
+        });
+
+        document.getElementById('mains_bandlimit_high_enabled').addEventListener('change', function (e) {
+            const panel = document.getElementById('mains_bandlimit_high_setting');
+            const unit = document.getElementById('mains_bandlimit_high_unit');
+            panel.style.opacity = e.target.checked ? '1' : '0.5';
+            panel.style.pointerEvents = e.target.checked ? 'auto' : 'none';
+            if (unit) unit.style.opacity = e.target.checked ? '1' : '0.5';
+        });
+
+        // Mixed-Phase defeats PRC (it subsumes PRC behavior)
+        function updateMixedPhaseDefeat() {
+            const mixedOn = document.getElementById('mixed_phase_enabled').checked;
+            const prcCheck = document.getElementById('preringing_reduction');
+            const prcSetting = document.getElementById('prc_freq_setting');
+            if (mixedOn) {
+                prcCheck.checked = false;
+                prcCheck.disabled = true;
+                prcCheck.parentElement.style.opacity = '0.35';
+                prcSetting.style.opacity = '0.35';
+                prcSetting.style.pointerEvents = 'none';
+            } else {
+                prcCheck.disabled = false;
+                prcCheck.parentElement.style.opacity = '1';
+                prcSetting.style.opacity = '1';
+                prcSetting.style.pointerEvents = 'auto';
+            }
+        }
+        document.getElementById('mixed_phase_enabled').addEventListener('change', updateMixedPhaseDefeat);
+        // Run on load to apply default state
+        updateMixedPhaseDefeat();
+
+        document.getElementById('regularized_inversion').addEventListener('change', function (e) {
+            const panel = document.getElementById('reg_beta_setting');
+            panel.style.opacity = e.target.checked ? '1' : '0.5';
+            panel.style.pointerEvents = e.target.checked ? 'auto' : 'none';
+        });
+
+        document.getElementById('auto_sub_alignment').addEventListener('change', function (e) {
+            const panel = document.getElementById('manual_sub_delay_setting');
+            // If checked, it's automated, so hide manual entry. If unchecked, allow manual entry.
+            panel.style.opacity = e.target.checked ? '0.5' : '1';
+            panel.style.pointerEvents = e.target.checked ? 'none' : 'auto';
+        });
+
+        document.getElementById('auto_rew_import').addEventListener('change', function (e) {
+            const panel = document.getElementById('global_id_setting');
+            // If checked, it will auto-generate the ID, hide manual entry.
+            panel.style.opacity = e.target.checked ? '0.5' : '1';
+            panel.style.pointerEvents = e.target.checked ? 'none' : 'auto';
+        });
+
+        // Grey out sub-specific settings when no sub ID is entered
+        function updateSubSettingsVisibility() {
+            const lfeId = document.getElementById('lfe_id').value.trim();
+            const hasSub = lfeId.length > 0;
+            const subElements = [
+                'fc', 'crossover_mains', 'crossover_sub',
+                'phase_mains', 'phase_sub',
+                'sub_eq_enabled', 'sub_gd_eq_enabled',
+                'sub_bandlimit_low_enabled', 'sub_bandlimit_high_enabled',
+                'vba_enabled'
+            ];
+            subElements.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const parent = el.closest('.form-group') || el.parentElement;
+                    if (parent) {
+                        parent.style.opacity = hasSub ? '1' : '0.35';
+                        parent.style.pointerEvents = hasSub ? 'auto' : 'none';
+                    }
+                }
+            });
+            // VBA section
+            const vbaSection = document.getElementById('vba-settings');
+            if (!hasSub && vbaSection) {
+                vbaSection.style.opacity = '0.35';
+                vbaSection.style.pointerEvents = 'none';
+            }
+            // Sub bandlimit setting panels
+            ['sub_bandlimit_low_setting', 'sub_bandlimit_high_setting'].forEach(id => {
+                const panel = document.getElementById(id);
+                if (panel && !hasSub) {
+                    panel.style.opacity = '0.35';
+                    panel.style.pointerEvents = 'none';
+                }
+            });
+            // Phase 2 sub alignment controls
+            ['auto_sub_alignment', 'align_lfe_ms'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const parent = el.closest('.form-group') || el.parentElement;
+                    if (parent) {
+                        parent.style.opacity = hasSub ? '1' : '0.35';
+                        parent.style.pointerEvents = hasSub ? 'auto' : 'none';
+                    }
+                }
+            });
+            const manualSubDelay = document.getElementById('manual_sub_delay_setting');
+            if (manualSubDelay && !hasSub) {
+                manualSubDelay.style.opacity = '0.35';
+                manualSubDelay.style.pointerEvents = 'none';
+            }
+        }
+        document.getElementById('lfe_id').addEventListener('input', updateSubSettingsVisibility);
+        updateSubSettingsVisibility(); // Apply on load
+
+        function updateDelayInputs() {
+            const container = document.getElementById('dynamic-delays-container');
+            const mainsRaw = document.getElementById('mains_ids').value;
+            const mains = mainsRaw.split(',').map(s => s.trim()).filter(Boolean);
+            const lfe = document.getElementById('lfe_id').value.trim();
+
+            const existingValues = {};
+            container.querySelectorAll('.delay-input').forEach(input => {
+                existingValues[input.dataset.id] = input.value;
+            });
+
+            container.innerHTML = '';
+            const allIds = [...mains];
+            if (lfe) allIds.push(lfe);
+
+            if (allIds.length === 0) {
+                container.innerHTML = '<p style="color: #777; grid-column: span 2; margin-top: 0;">Enter Mains or Subwoofer IDs above to generate delay inputs.</p>';
+                return;
+            }
+
+            allIds.forEach(id => {
+                const group = document.createElement('div');
+                group.className = 'form-group';
+                const label = document.createElement('label');
+                label.innerText = `Delay for ID ${id} (ms)`;
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.step = '0.01';
+                input.className = 'delay-input';
+                input.dataset.id = id;
+                input.value = existingValues[id] || '0.0';
+
+                group.appendChild(label);
+                group.appendChild(input);
+                container.appendChild(group);
+            });
+        }
+
+        document.getElementById('mains_ids').addEventListener('input', updateDelayInputs);
+        document.getElementById('lfe_id').addEventListener('input', updateDelayInputs);
+
+        function log(msg) {
+            const c = document.getElementById('console-output');
+            c.innerHTML += msg + '\n';
+            c.scrollTop = c.scrollHeight;
+        }
+
+        function getFormData() {
+            const acoustic_delays = {};
+            document.querySelectorAll('.delay-input').forEach(input => {
+                acoustic_delays[input.dataset.id] = parseFloat(input.value) || 0.0;
+            });
+
+            return {
+                mains_ids: document.getElementById('mains_ids').value.split(',').map(s => s.trim()).filter(Boolean),
+                lfe_id: document.getElementById('lfe_id').value.trim(),
+                fc: parseFloat(document.getElementById('fc').value),
+                crossover_mains: document.getElementById('crossover_mains').value,
+                crossover_sub: document.getElementById('crossover_sub').value,
+                phase_mains: document.getElementById('phase_mains').value,
+                phase_sub: document.getElementById('phase_sub').value,
+                delay_ms: parseFloat(document.getElementById('delay_ms').value),
+                house_boost: parseFloat(document.getElementById('house_boost').value),
+                house_start: parseFloat(document.getElementById('house_start').value),
+                house_end: parseFloat(document.getElementById('house_end').value),
+                custom_house_curve: customHouseCurveB64,
+                acoustic_delays: acoustic_delays,
+                auto_align_enabled: document.getElementById('auto_align_enabled').checked,
+                mains_eq_enabled: document.getElementById('mains_eq_enabled').checked,
+                mains_phase_lin_enabled: document.getElementById('mains_phase_lin_enabled').checked,
+                vol_align_enabled: document.getElementById('vol_align_enabled').checked,
+                sub_eq_enabled: document.getElementById('sub_eq_enabled').checked,
+                sub_bandlimit_low_enabled: document.getElementById('sub_bandlimit_low_enabled').checked,
+                sub_bandlimit_low_hz: parseFloat(document.getElementById('sub_bandlimit_low_hz').value),
+                sub_bandlimit_high_enabled: document.getElementById('sub_bandlimit_high_enabled').checked,
+                sub_bandlimit_high_hz: parseFloat(document.getElementById('sub_bandlimit_high_hz').value),
+                sub_gd_eq_enabled: document.getElementById('sub_gd_eq_enabled').checked,
+                mains_bandlimit_high_enabled: document.getElementById('mains_bandlimit_high_enabled').checked,
+                mains_bandlimit_high_hz: parseFloat(document.getElementById('mains_bandlimit_high_hz').value),
+                global_eq_enabled: document.getElementById('global_eq_enabled').checked,
+                preringing_reduction: document.getElementById('preringing_reduction').checked,
+                prc_freq_hz: parseFloat(document.getElementById('prc_freq_hz').value),
+                auto_target_curve: document.getElementById('auto_target_curve') ? document.getElementById('auto_target_curve').checked : false,
+                auto_target_start_hz: document.getElementById('auto_target_start_hz') ? parseFloat(document.getElementById('auto_target_start_hz').value) : 2000,
+                vba_enabled: document.getElementById('vba_enabled').checked,
+                vba_modes_raw: document.getElementById('vba_modes').value,
+                vba_attn_db: parseFloat(document.getElementById('vba_attn_db').value),
+                vba_taps: parseInt(document.getElementById('vba_taps').value),
+                sample_rate: parseInt(document.getElementById('sample_rate').value),
+                filter_taps: parseInt(document.getElementById('filter_taps').value),
+                rew_api_url: document.getElementById('rew_api_url').value.trim(),
+                fdw_cycles: parseFloat(document.getElementById('fdw_cycles').value),
+                trans_start: parseFloat(document.getElementById('trans_start').value),
+                trans_end: parseFloat(document.getElementById('trans_end').value),
+                max_boost_low: parseFloat(document.getElementById('max_boost_low').value),
+                max_boost_high: parseFloat(document.getElementById('max_boost_high').value),
+                sub_percentile: parseFloat(document.getElementById('sub_percentile').value),
+                global_smoothing: document.getElementById('global_smoothing').value,
+                vol_match_low: parseFloat(document.getElementById('vol_match_low').value),
+                vol_match_high: parseFloat(document.getElementById('vol_match_high').value),
+                regularized_inversion: document.getElementById('regularized_inversion').checked,
+                reg_beta_db: parseFloat(document.getElementById('reg_beta_db').value),
+                mixed_phase_enabled: document.getElementById('mixed_phase_enabled').checked,
+                mixed_phase_crossover_hz: parseFloat(document.getElementById('mixed_phase_crossover_hz').value),
+                auto_sub_alignment: document.getElementById('auto_sub_alignment') ? document.getElementById('auto_sub_alignment').checked : true,
+                auto_rew_import: document.getElementById('auto_rew_import') ? document.getElementById('auto_rew_import').checked : true,
+                global_eq_apply_freq_limits: document.getElementById('global_eq_apply_freq_limits') ? document.getElementById('global_eq_apply_freq_limits').checked : false,
+                mains_low_rolloff_hz: parseFloat(document.getElementById('mains_low_rolloff_hz').value) || 0,
+                mains_high_rolloff_hz: parseFloat(document.getElementById('mains_high_rolloff_hz').value) || 0,
+                sub_low_rolloff_hz: parseFloat(document.getElementById('sub_low_rolloff_hz').value) || 0,
+                sub_high_rolloff_hz: parseFloat(document.getElementById('sub_high_rolloff_hz').value) || 0
+            };
+        }
+
+        function resetToDefaults() {
+            if (confirm("Are you sure you want to reset all settings to their defaults? Any unsaved changes will be lost.")) {
+                window.location.reload();
+            }
+        }
+
+        function exportConfig() {
+            const data = getFormData();
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "xpdrc_config.json";
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importConfig(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    document.getElementById('mains_ids').value = (data.mains_ids || []).join(',');
+                    document.getElementById('lfe_id').value = data.lfe_id || '';
+
+                    updateDelayInputs();
+                    if (data.acoustic_delays) {
+                        document.querySelectorAll('.delay-input').forEach(input => {
+                            if (data.acoustic_delays[input.dataset.id] !== undefined) {
+                                input.value = data.acoustic_delays[input.dataset.id];
+                            }
+                        });
+                    }
+
+                    document.getElementById('fc').value = data.fc || 80;
+                    document.getElementById('crossover_mains').value = data.crossover_mains || 'lr4';
+                    document.getElementById('crossover_sub').value = data.crossover_sub || 'lr4';
+                    document.getElementById('phase_mains').value = data.phase_mains || 'linear';
+                    document.getElementById('phase_sub').value = data.phase_sub || 'linear';
+                    document.getElementById('delay_ms').value = data.delay_ms || 100;
+                    document.getElementById('house_boost').value = data.house_boost || 6;
+                    document.getElementById('house_start').value = data.house_start || 120;
+                    document.getElementById('house_end').value = data.house_end || 20;
+
+                    customHouseCurveB64 = data.custom_house_curve || "";
+                    if (customHouseCurveB64) {
+                        document.getElementById('house_curve_status').innerText = "Loaded custom curve from preset.";
+                        document.getElementById('house_curve_status').style.color = 'var(--secondary-color)';
+                        previewHouseCurve();
+                    } else {
+                        clearHouseCurveFile();
+                    }
+
+                    document.getElementById('mains_eq_enabled').checked = data.mains_eq_enabled !== undefined ? data.mains_eq_enabled : true;
+                    document.getElementById('mains_phase_lin_enabled').checked = data.mains_phase_lin_enabled !== undefined ? data.mains_phase_lin_enabled : true;
+                    document.getElementById('vol_align_enabled').checked = data.vol_align_enabled !== undefined ? data.vol_align_enabled : true;
+                    document.getElementById('sub_eq_enabled').checked = data.sub_eq_enabled !== undefined ? data.sub_eq_enabled : true;
+                    if (document.getElementById('global_eq_enabled')) {
+                        document.getElementById('global_eq_enabled').checked = data.global_eq_enabled !== undefined ? data.global_eq_enabled : true;
+                    }
+                    if (document.getElementById('preringing_reduction')) {
+                        document.getElementById('preringing_reduction').checked = data.preringing_reduction !== undefined ? data.preringing_reduction : true;
+                        document.getElementById('prc_freq_hz').value = data.prc_freq_hz || 1000;
+                    }
+                    if (document.getElementById('auto_target_curve')) {
+                        document.getElementById('auto_target_curve').checked = data.auto_target_curve !== undefined ? data.auto_target_curve : true;
+                        document.getElementById('auto_target_start_hz').value = data.auto_target_start_hz || 2000;
+                    }
+
+                    document.getElementById('sub_bandlimit_low_enabled').checked = data.sub_bandlimit_low_enabled || false;
+                    document.getElementById('sub_bandlimit_low_enabled').dispatchEvent(new Event('change'));
+                    document.getElementById('sub_bandlimit_low_hz').value = data.sub_bandlimit_low_hz || 15;
+                    document.getElementById('sub_bandlimit_high_enabled').checked = data.sub_bandlimit_high_enabled || false;
+                    document.getElementById('sub_bandlimit_high_enabled').dispatchEvent(new Event('change'));
+                    document.getElementById('sub_bandlimit_high_hz').value = data.sub_bandlimit_high_hz || 150;
+                    document.getElementById('sub_gd_eq_enabled').checked = data.sub_gd_eq_enabled || false;
+                    document.getElementById('mains_bandlimit_high_enabled').checked = data.mains_bandlimit_high_enabled || false;
+                    document.getElementById('mains_bandlimit_high_enabled').dispatchEvent(new Event('change'));
+                    document.getElementById('mains_bandlimit_high_hz').value = data.mains_bandlimit_high_hz || 10000;
+
+                    document.getElementById('vba_enabled').checked = data.vba_enabled || false;
+                    document.getElementById('vba_enabled').dispatchEvent(new Event('change'));
+                    document.getElementById('vba_modes').value = data.vba_modes_raw || '';
+                    document.getElementById('vba_attn_db').value = data.vba_attn_db || -3.0;
+                    document.getElementById('vba_taps').value = data.vba_taps || 4;
+
+                    document.getElementById('sample_rate').value = data.sample_rate || 48000;
+                    document.getElementById('filter_taps').value = data.filter_taps || 65536;
+                    document.getElementById('rew_api_url').value = data.rew_api_url || "http://localhost:4735";
+                    document.getElementById('fdw_cycles').value = data.fdw_cycles || 5.0;
+                    document.getElementById('trans_start').value = data.trans_start || 200;
+                    document.getElementById('trans_end').value = data.trans_end || 300;
+                    document.getElementById('max_boost_low').value = data.max_boost_low || 6.0;
+                    document.getElementById('max_boost_high').value = data.max_boost_high || 3.0;
+                    document.getElementById('sub_percentile').value = data.sub_percentile || 15;
+                    document.getElementById('global_smoothing').value = data.global_smoothing || "erb";
+                    document.getElementById('vol_match_low').value = data.vol_match_low || 500;
+                    document.getElementById('vol_match_high').value = data.vol_match_high || 2000;
+
+                    // Regularized Inversion & Mixed-Phase
+                    if (document.getElementById('regularized_inversion')) {
+                        document.getElementById('regularized_inversion').checked = data.regularized_inversion !== undefined ? data.regularized_inversion : false;
+                        document.getElementById('regularized_inversion').dispatchEvent(new Event('change'));
+                        document.getElementById('reg_beta_db').value = data.reg_beta_db || 12.0;
+                    }
+                    if (document.getElementById('mixed_phase_enabled')) {
+                        document.getElementById('mixed_phase_enabled').checked = data.mixed_phase_enabled !== undefined ? data.mixed_phase_enabled : false;
+                        document.getElementById('mixed_phase_enabled').dispatchEvent(new Event('change'));
+                        document.getElementById('mixed_phase_crossover_hz').value = data.mixed_phase_crossover_hz || 500;
+                    }
+
+                    if (document.getElementById('auto_sub_alignment')) {
+                        document.getElementById('auto_sub_alignment').checked = data.auto_sub_alignment !== undefined ? data.auto_sub_alignment : true;
+                        document.getElementById('auto_sub_alignment').dispatchEvent(new Event('change'));
+                    }
+                    if (document.getElementById('auto_rew_import')) {
+                        document.getElementById('auto_rew_import').checked = data.auto_rew_import !== undefined ? data.auto_rew_import : true;
+                        document.getElementById('auto_rew_import').dispatchEvent(new Event('change'));
+                    }
+                    if (document.getElementById('global_eq_apply_freq_limits')) {
+                        document.getElementById('global_eq_apply_freq_limits').checked = data.global_eq_apply_freq_limits || false;
+                    }
+
+                    // Auto Time-Align
+                    if (document.getElementById('auto_align_enabled')) {
+                        document.getElementById('auto_align_enabled').checked = data.auto_align_enabled !== undefined ? data.auto_align_enabled : true;
+                        document.getElementById('auto_align_enabled').dispatchEvent(new Event('change'));
+                    }
+
+                    // Rolloff overrides
+                    document.getElementById('mains_low_rolloff_hz').value = data.mains_low_rolloff_hz || 0;
+                    document.getElementById('mains_high_rolloff_hz').value = data.mains_high_rolloff_hz || 0;
+                    document.getElementById('sub_low_rolloff_hz').value = data.sub_low_rolloff_hz || 0;
+                    document.getElementById('sub_high_rolloff_hz').value = data.sub_high_rolloff_hz || 0;
+
+                    updateSubSettingsVisibility();
+                    log("> Config loaded successfully.");
+                } catch (err) {
+                    log("> Error parsing JSON config.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function runPhase1() {
+            log("\n> Starting Phase 1: Processing Base FIRs...");
+            try {
+                const res = await fetch('/api/run_phase1', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(getFormData())
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    log(data.message);
+                    document.getElementById('phase-2-section').classList.remove('hidden');
+                } else {
+                    log("❌ Error: " + data.message);
+                }
+            } catch (err) {
+                log("❌ Network Error: " + err);
+            }
+        }
+
+        async function runPhase2() {
+            log("\n> Starting Phase 2: Baking Final FIRs...");
+            const align_lfe_ms = parseFloat(document.getElementById('align_lfe_ms').value) || 0.0;
+            const global_id = document.getElementById('global_id').value.trim();
+
+            try {
+                const res = await fetch('/api/run_phase2', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        align_lfe_ms: align_lfe_ms,
+                        global_id: global_id,
+                        global_eq_enabled: document.getElementById('global_eq_enabled').checked,
+                        global_eq_apply_freq_limits: document.getElementById('global_eq_apply_freq_limits').checked,
+                        auto_target_curve: document.getElementById('auto_target_curve').checked,
+                        auto_target_start_hz: parseFloat(document.getElementById('auto_target_start_hz').value),
+                        auto_rew_import: document.getElementById('auto_rew_import') ? document.getElementById('auto_rew_import').checked : true
+                    })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    log(data.message);
+                    log("✅ ALL DONE! Files saved in your script directory.");
+                } else {
+                    log("❌ Error: " + data.message);
+                }
+            } catch (err) {
+                log("❌ Network Error: " + err);
+            }
+        }
+
+        // =========================================================
+        // SETUP WIZARD LOGIC
+        // =========================================================
+        let currentPollId = 0;
+        let wizState = {
+            step: 1,
+            maxPos: 9,
+            currPos: 1,
+            channels: [], // strings e.g. 'L', 'R'
+            currChIndex: 0,
+            measurements: {}, // ch -> list of {pos, id}
+            baselineMeasurements: 0,
+            pollActive: false,
+            pollInterval: null
+        };
+
+        function startWizard() {
+            document.getElementById('wizard-modal').classList.remove('hidden');
+            goToStep(1);
+        }
+
+        function closeWizard() {
+            wizState.pollActive = false;
+            document.getElementById('wizard-modal').classList.add('hidden');
+            if (wizState.pollInterval) {
+                clearTimeout(wizState.pollInterval);
+                wizState.pollInterval = null;
+            }
+            document.getElementById('wiz_btn_next').innerText = "Next ➔";
+            document.getElementById('wiz_btn_next').onclick = nextWizardStep;
+        }
+
+        function goToStep(n) {
+            wizState.step = n;
+            for (let i = 1; i <= 4; i++) {
+                const stepEl = document.getElementById(`wizard-step-${i}`);
+                if (stepEl) {
+                    if (i === n) stepEl.classList.add('active');
+                    else stepEl.classList.remove('active');
+                }
+            }
+
+            // Footer logic
+            document.getElementById('wiz_btn_cancel').classList.toggle('hidden', n >= 3);
+            document.getElementById('wiz_btn_next').classList.toggle('hidden', n !== 1);
+            document.getElementById('wiz_btn_skip').classList.toggle('hidden', true); // handled in measurement step
+        }
+
+        async function nextWizardStep() {
+            if (wizState.step === 1) {
+                // Collect channels
+                wizState.channels = Array.from(document.querySelectorAll('.wiz-ch:checked')).map(el => el.value);
+                if (wizState.channels.length === 0) {
+                    alert("Please select at least one speaker to measure.");
+                    return;
+                }
+                wizState.measurements = {};
+                wizState.channels.forEach(ch => wizState.measurements[ch] = []);
+                wizState.currPos = 1;
+                wizState.currChIndex = 0;
+
+                // Grab baseline measurements count from REW so we know when new ones drop
+                try {
+                    const res = await fetch('/api/wizard/poll_measurements?cachebust=' + Date.now(), { cache: 'no-store' });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        wizState.baselineMeasurements = data.max_measurements;
+                    } else {
+                        alert("Error connecting to REW API to poll measurements: " + data.message);
+                        return;
+                    }
+                } catch (err) {
+                    alert("Network error connecting to Backend.");
+                    return;
+                }
+
+                updatePosUI();
+                goToStep(2);
+                startPolling();
+            } else if (wizState.step === 2) {
+                if (wizState.currPos >= wizState.maxPos) {
+                    wizState.pollActive = false;
+                    goToStep(3);
+                    processMeasurements();
+                } else {
+                    advanceToNextPosition();
+                }
+            }
+        }
+
+        function updatePosUI() {
+            document.getElementById('wiz_pos_title').innerText = `Position ${wizState.currPos}`;
+            if (wizState.currPos === 1) {
+                document.getElementById('wiz_pos_instr').innerText = "Place the microphone exactly at your Main Listening Position (MLP). This will be the timing anchor.";
+                document.getElementById('wiz_btn_skip').classList.add('hidden');
+            } else {
+                document.getElementById('wiz_pos_instr').innerText = `Move the microphone to position ${wizState.currPos}.`;
+                document.getElementById('wiz_btn_skip').classList.remove('hidden');
+            }
+
+            // Are we done with this position?
+            if (wizState.currChIndex >= wizState.channels.length) {
+                document.getElementById('wiz_ch_instr').innerHTML = `<span style="color: #03dac6;">Position ${wizState.currPos} Complete!</span>`;
+                document.getElementById('wiz_measuring_state').classList.add('hidden');
+                document.getElementById('wiz_btn_next').classList.remove('hidden'); // Allow manual advancement to next pos/finish
+
+                if (wizState.currPos >= wizState.maxPos) {
+                    document.getElementById('wiz_btn_next').innerText = "Finish";
+                } else {
+                    document.getElementById('wiz_btn_next').innerText = `Next Position ➔`;
+                }
+            } else {
+                const currentCh = wizState.channels[wizState.currChIndex];
+                document.getElementById('wiz_ch_instr').innerHTML = `Measure: <span style="color: #1e1e1e; background: #03dac6; padding: 2px 8px; border-radius: 4px;">${currentCh}</span>`;
+                document.getElementById('wiz_measuring_state').classList.remove('hidden');
+                document.getElementById('wiz_btn_next').classList.add('hidden'); // Hide next until position is done
+                document.getElementById('wiz_poll_status').innerText = `Waiting for measurement of ${currentCh} in REW...`;
+            }
+
+            // Build channel progress chips
+            const listEl = document.getElementById('wiz_ch_progress');
+            listEl.innerHTML = wizState.channels.map((ch, idx) => {
+                const hasMeas = wizState.measurements[ch] && wizState.measurements[ch].some(m => m.pos === wizState.currPos);
+
+                let bg = 'rgba(255,255,255,0.05)';
+                let color = '#888';
+                let border = '1px solid #444';
+
+                if (hasMeas) {
+                    bg = 'rgba(3, 218, 198, 0.15)'; // Done color bg
+                    color = '#03dac6'; // Done text
+                    border = '1px solid #03dac6';
+                }
+                if (idx === wizState.currChIndex) {
+                    bg = 'var(--secondary-color)';
+                    color = '#121212';
+                    border = '1px solid var(--secondary-color)';
+                }
+
+                return `<div style="padding: 6px 16px; border-radius: 20px; background: ${bg}; color: ${color}; border: ${border}; cursor: pointer; font-weight: bold; font-size: 0.85em; transition: 0.2s;" title="Jump to ${ch}" onclick="jumpToSpeaker(${idx})">${ch}</div>`;
+            }).join('');
+        }
+
+        function jumpToSpeaker(idx) {
+            if (idx >= 0 && idx < wizState.channels.length) {
+                const wasFinished = (wizState.currChIndex >= wizState.channels.length);
+                wizState.currChIndex = idx;
+                updatePosUI();
+                if (wasFinished || !wizState.pollActive) {
+                    startPolling();
+                }
+            }
+        }
+
+        function advanceToNextPosition() {
+            wizState.currPos++;
+            wizState.currChIndex = 0;
+            if (wizState.currPos > wizState.maxPos) {
+                wizState.pollActive = false;
+                goToStep(3);
+                processMeasurements();
+            } else {
+                updatePosUI();
+                startPolling();
+            }
+        }
+
+        function startPolling() {
+            wizState.pollActive = true;
+            if (wizState.pollInterval) {
+                clearTimeout(wizState.pollInterval);
+                wizState.pollInterval = null;
+            }
+
+            const myPollId = ++currentPollId;
+
+            const pollFn = async () => {
+                if (!wizState.pollActive || myPollId !== currentPollId || wizState.currChIndex >= wizState.channels.length) {
+                    return;
+                }
+
+                try {
+                    const res = await fetch('/api/wizard/poll_measurements?t=' + Date.now(), { cache: 'no-store' });
+                    if (!wizState.pollActive || myPollId !== currentPollId) return; // Prevent race condition if cancelled during fetch
+
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        const currentMax = data.max_measurements;
+                        let detectedNewCount = currentMax - wizState.baselineMeasurements;
+
+                        if (detectedNewCount >= 1) {
+                            if (wizState.currChIndex < wizState.channels.length) {
+                                const currentCh = wizState.channels[wizState.currChIndex];
+                                // User took new measurement(s). Use the very latest one generated.
+                                const newId = currentMax;
+
+                                // Remove any existing measurement for this speaker at this position (Retake overwrite)
+                                wizState.measurements[currentCh] = wizState.measurements[currentCh].filter(m => m.pos !== wizState.currPos);
+                                wizState.measurements[currentCh].push({ pos: wizState.currPos, id: newId });
+
+                                // Advance to next unmeasured speaker if possible
+                                let nextIdx = wizState.currChIndex + 1;
+                                while (nextIdx < wizState.channels.length) {
+                                    const nextCh = wizState.channels[nextIdx];
+                                    const nextHasMeas = wizState.measurements[nextCh] && wizState.measurements[nextCh].some(m => m.pos === wizState.currPos);
+                                    if (!nextHasMeas) break;
+                                    nextIdx++;
+                                }
+                                wizState.currChIndex = nextIdx;
+                            }
+
+                            // Fast-forward baseline past any extra measurements
+                            wizState.baselineMeasurements = currentMax;
+                            updatePosUI();
+                        } else if (detectedNewCount < 0) {
+                            // User deleted measurements in REW explicitly, reset baseline to reality
+                            wizState.baselineMeasurements = currentMax;
+                        }
+                    }
+                } catch (err) {
+                    console.log("Polling error:", err);
+                }
+
+                if (wizState.pollActive && myPollId === currentPollId && wizState.currChIndex < wizState.channels.length) {
+                    wizState.pollInterval = setTimeout(pollFn, 1000);
+                }
+            };
+
+            wizState.pollInterval = setTimeout(pollFn, 1000);
+        }
+
+        function finishMeasurements() {
+            if (wizState.measurements[wizState.channels[0]].length === 0) {
+                alert("You haven't completed any measurements yet.");
+                return;
+            }
+            if (wizState.measurements[wizState.channels[0]].length < 3) {
+                if (!confirm("You have measured fewer than 3 positions. The spatial average will be less accurate. Are you sure you want to finish?")) {
+                    return;
+                }
+            }
+            wizState.pollActive = false;
+            goToStep(3);
+            processMeasurements();
+        }
+
+        async function processMeasurements() {
+            try {
+                const res = await fetch('/api/wizard/align_and_average', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ groups: wizState.measurements })
+                });
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    autoPopulateConfig(data.final_ids);
+                    goToStep(4);
+
+                    // Show Finish instead of Next
+                    document.getElementById('wiz_btn_next').innerText = "Finish";
+                    document.getElementById('wiz_btn_next').onclick = closeWizard;
+                    document.getElementById('wiz_btn_next').classList.remove('hidden');
+                } else {
+                    alert("Alignment failed: " + data.message);
+                    goToStep(2); // Go back to allow retry or cancel
+                }
+            } catch (e) {
+                alert("Network error during processing.");
+                goToStep(2);
+            }
+        }
+
+        function autoPopulateConfig(finalIds) {
+            // Sort channels into Mains and Sub
+            let mainsStr = [];
+            let subStr = "";
+            for (const ch of wizState.channels) {
+                if (!finalIds[ch]) continue;
+                const id = finalIds[ch];
+                if (ch.toUpperCase().includes('LFE') || ch.toUpperCase().includes('SUB') || ch.toUpperCase().includes('SW')) {
+                    subStr = id;
+                } else {
+                    mainsStr.push(id);
+                }
+            }
+            if (mainsStr.length > 0) {
+                document.getElementById('mains_ids').value = mainsStr.join(',');
+            }
+            if (subStr) {
+                document.getElementById('lfe_id').value = subStr;
+            }
+            updateSubSettingsVisibility();
+            updateDelayInputs();
+            log("✨ Setup Wizard successfully applied averages to the configuration.");
+        }
+    </script>
+    <div
+        style="text-align: center; font-size: 0.8em; color: var(--text-muted); margin-top: 30px; padding-bottom: 20px;">
+        build 06.03.26/v16</div>
+</body>
+
+</html>
