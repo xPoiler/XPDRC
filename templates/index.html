@@ -443,7 +443,11 @@
 
     <div class="container">
         <div class="header-actions">
-            <h1>XPDRC 1.0 Web DSP</h1>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="XPDRC Logo"
+                    style="height: 40px; width: auto; border-radius: 8px;">
+                <h1>XPDRC 1.0 Web DSP</h1>
+            </div>
             <div style="display: flex; gap: 10px; align-items: center;">
                 <button type="button" class="btn-run"
                     style="margin: 0; padding: 10px 15px; width: auto; font-size: 1rem;" onclick="startWizard()">✨ Run
