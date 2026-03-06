@@ -11,6 +11,9 @@ import os
 import time
 import traceback
 from flask import Flask, request, jsonify, render_template
+import webbrowser
+import threading
+
 
 app = Flask(__name__)
 
@@ -1848,5 +1851,15 @@ def preview_house_curve():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
+def open_browser():
+    """Opens the local web interface in the default browser."""
+    # Wait a short moment for the Flask server to start
+    time.sleep(1.5)
+    webbrowser.open("http://127.0.0.1:5000")
+
 if __name__ == "__main__":
+    # Open the browser only once in the main process (before the reloader starts)
+    if not os.environ.get("WERKZEUG_RUN_MAIN"):
+        threading.Thread(target=open_browser, daemon=True).start()
+
     app.run(debug=True, port=5000)
