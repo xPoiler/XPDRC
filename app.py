@@ -1141,7 +1141,7 @@ def run_phase1():
                 
                 # --- Iterative Group Delay Tuning ---
                 clog("\n  -> Optimizing Subwoofer Group Delay via Iterative Ringing Analysis...")
-                max_iterations = 4
+                max_iterations = 10
                 best_H_eq = H_eq_min_phase
                 
                 frac_smooth = 3.0  # Starts with 1/3 octave
@@ -1181,12 +1181,17 @@ def run_phase1():
                     pre_r, post_r = evaluate_ringing(test_fir, TARGET_SAMPLE_RATE)
                     clog(f"    [Iteration {i+1}] frac={frac_smooth:.1f}, cap={max_phase_caps[0]/np.pi:.2f}π | Pre: {pre_r*100:.1f}%, Post: {post_r*100:.1f}%")
                     
-                    if pre_r <= pre_ring_threshold or i == max_iterations - 1:
+                    if pre_r <= pre_ring_threshold:
                         best_H_eq = H_eq_min_phase * H_gd_allpass
-                        if pre_r <= pre_ring_threshold:
-                            clog("    🟢 Subwoofer GD EQ passed ringing validation!")
+                        clog("    🟢 Subwoofer GD EQ passed ringing validation!")
+                        break
+                    elif i == max_iterations - 1:
+                        if pre_r > 0.14:
+                            best_H_eq = H_eq_min_phase
+                            clog(f"    🔴 GD EQ ditched entirely due to excessive pre-ringing ({pre_r*100:.1f}% > 14%) at the final iteration.")
                         else:
-                            clog("    🟡 Max iterations reached. Using safest filter.")
+                            best_H_eq = H_eq_min_phase * H_gd_allpass
+                            clog(f"    🟡 Max iterations reached. Using safest filter (Pre: {pre_r*100:.1f}%).")
                         break
                     else:
                         # Relax parameters to reduce sharpness
