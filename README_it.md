@@ -12,7 +12,7 @@ Cosa può fare XPDRC:
 - Crossover a fase lineare o fase minima di vari tipi e pendenze.
 - Correzione di magnitudo sotto la frequenza di Schroeder per mitigare i modi ambientali su tutti i canali separatamente.
 - EQ di magnitudo per subwoofer.
-- Correzione di magnitudo quasi-anecoica per i diffusori principali sopra la frequenza di Schroeder per il bilanciamento timbrico senza rendere il suono cupo.
+- Correzione di magnitudo quasi-anecoica per i diffusori principali sopra la frequenza di Schroeder per il bilanciamento timbrico senza rendere il suono cupo o smorto.
 - Inversione della fase in eccesso per i diffusori principali con algoritmi di prevenzione degli artefatti da ringing (linearizzazione della fase).
 - EQ del ritardo di gruppo per il sub con analisi iterativa della risonanza per prevenire artefatti di pre e post ringing.
 - Generazione completamente automatica di Virtual Bass Array per minimizzare i modi ambientali (solo se è presente il canale LFE).
