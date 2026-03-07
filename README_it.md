@@ -21,7 +21,7 @@ Cosa può fare XPDRC:
 - Allineamento automatico o manuale di un subwoofer con i diffusori principali (singolo subwoofer, per ora).
 - Generazione di filtri da 4096 tap fino a 131072 per la massima precisione.
 
-e altro ancora... le impostazioni e le preferenze possono essere facilmente cambiate dall'utente in ogni momento tramite l'interfaccia web locale disponibile su localhost:5000; quasi ogni singola variabile nello script può essere modificata dalla UI. Qualora l'utente lo desideri, consigliamo vivamente le impostazioni predefinite per facilità d'uso e migliori risultati nella maggior parte delle situazioni.
+e altro ancora... le impostazioni e le preferenze possono essere facilmente cambiate dall'utente in ogni momento tramite l'interfaccia web locale disponibile su localhost:5000; quasi ogni singola variabile nello script può essere modificata dalla UI, qualora l'utente lo desideri. Consigliamo vivamente le impostazioni predefinite per facilità d'uso e migliori risultati nella maggior parte delle situazioni.
 
 ## Installazione e Configurazione
 
