@@ -519,10 +519,10 @@ def run_phase1():
         mains_ids = config.get('mains_ids', [])
         lfe_id = config.get('lfe_id', '')
         fc = float(config.get('fc', 80.0))
-        delay_ms = float(config.get('delay_ms', 100.0))
+        delay_ms = float(config.get('delay_ms', 75.0))
         house_boost = float(config.get('house_boost', 6.0))
         house_start = float(config.get('house_start', 120.0))
-        house_end = float(config.get('house_end', 20.0))
+        house_end = float(config.get('house_end', 80.0))
         
         # Override Globals with Advanced Configs
         TARGET_SAMPLE_RATE = int(config.get('sample_rate', 48000))
@@ -534,7 +534,7 @@ def run_phase1():
         trans_start = float(config.get('trans_start', 200.0))
         trans_end = float(config.get('trans_end', 300.0))
         max_boost_low = float(config.get('max_boost_low', 6.0))
-        max_boost_high = float(config.get('max_boost_high', 3.0))
+        max_boost_high = float(config.get('max_boost_high', 6.0))
         sub_percentile = float(config.get('sub_percentile', 15.0))
         global_smoothing = config.get('global_smoothing', 'erb')
         vol_match_low = float(config.get('vol_match_low', 500.0))
@@ -544,8 +544,8 @@ def run_phase1():
         mains_phase_lin_enabled = config.get('mains_phase_lin_enabled', True)
         vol_align_enabled = config.get('vol_align_enabled', True)
         sub_eq_enabled = config.get('sub_eq_enabled', True)
-        sub_bandlimit_low_enabled = config.get('sub_bandlimit_low_enabled', False)
-        sub_bandlimit_low_hz = float(config.get('sub_bandlimit_low_hz', 15.0))
+        sub_bandlimit_low_enabled = config.get('sub_bandlimit_low_enabled', True)
+        sub_bandlimit_low_hz = float(config.get('sub_bandlimit_low_hz', 10.0))
         sub_bandlimit_high_enabled = config.get('sub_bandlimit_high_enabled', False)
         sub_bandlimit_high_hz = float(config.get('sub_bandlimit_high_hz', 150.0))
         mains_bandlimit_high_enabled = config.get('mains_bandlimit_high_enabled', False)
@@ -614,9 +614,9 @@ def run_phase1():
         freqs = fft.rfftfreq(FILTER_TAPS, 1/TARGET_SAMPLE_RATE)
         
         # VBA Setup
-        vba_enabled = config.get('vba_enabled', False)
+        vba_enabled = config.get('vba_enabled', True)
         vba_modes = []
-        vba_attn_db = float(config.get('vba_attn_db', -3.0))
+        vba_attn_db = float(config.get('vba_attn_db', -4.0))
         vba_taps = int(config.get('vba_taps', 4))
         ir_sub_cached = None
         
@@ -1289,7 +1289,10 @@ def run_phase1():
         return jsonify({'status': 'success', 'message': '\n'.join(console_log)})
     
     except Exception as e:
-        clog(f"❌ Python Error: {str(e)}")
+        err_msg = str(e)
+        if "invalid index to scalar variable" in err_msg.lower():
+            err_msg += " (Have you entered your measurement IDs or run the setup wizard?)"
+        clog(f"❌ Python Error: {err_msg}")
         return jsonify({'status': 'error', 'message': '\n'.join(console_log)})
 
 @app.route('/api/run_phase2', methods=['POST'])
@@ -1308,7 +1311,7 @@ def run_phase2():
         align_lfe_ms = float(request.json.get('align_lfe_ms', 0.0))
         global_id = request.json.get('global_id', '').strip()
         auto_rew_import = request.json.get('auto_rew_import', True)
-        auto_target_curve = request.json.get('auto_target_curve', True)
+        auto_target_curve = request.json.get('auto_target_curve', False)
         auto_target_start_hz = float(request.json.get('auto_target_start_hz', 2000.0))
         auto_sub_alignment = request.json.get('auto_sub_alignment', True)
         global_eq_apply_freq_limits = request.json.get('global_eq_apply_freq_limits', False)
@@ -1692,7 +1695,10 @@ def run_phase2():
         return jsonify({'status': 'success', 'message': '\n'.join(console_log)})
     
     except Exception as e:
-        clog(f"❌ Python Error: {str(e)}")
+        err_msg = str(e)
+        if "invalid index to scalar variable" in err_msg.lower():
+            err_msg += " (Have you entered your measurement IDs or run the setup wizard?)"
+        clog(f"❌ Python Error: {err_msg}")
         return jsonify({'status': 'error', 'message': '\n'.join(console_log)})
 
 # ==============================================================================

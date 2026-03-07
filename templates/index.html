@@ -486,10 +486,10 @@
                     </div>
                     <div class="form-group">
                         <label>Target Base Delay (ms) <span class="tooltip">?<span class="tooltiptext">Added baseline
-                                    delay to anchor the filter generation. Use 100ms+ for best deep bass correction
+                                    delay to anchor the filter generation. Use 75ms+ for best deep bass correction
                                     (movies/music). Keep under 50ms for low latency (gaming/desktop
                                     use).</span></span></label>
-                        <input type="number" id="delay_ms" value="100" step="0.1">
+                        <input type="number" id="delay_ms" value="75" step="0.1">
                     </div>
                     <div class="form-group">
                         <label>Mains Crossover Type <span class="tooltip">?<span class="tooltiptext">The filter topology
@@ -557,7 +557,7 @@
                     <div class="form-group">
                         <label>Slope End (Hz) <span class="tooltip">?<span class="tooltiptext">The frequency where the
                                     bass boost slope reaches its maximum level.</span></span></label>
-                        <input type="number" id="house_end" value="20">
+                        <input type="number" id="house_end" value="80">
                     </div>
                     <div class="form-group">
                         <label>Custom House Curve (.txt optional) <span class="tooltip">?<span
@@ -602,7 +602,7 @@
             <div class="section">
                 <h3>Virtual Bass Array (Subwoofer Only)</h3>
                 <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
-                    <input type="checkbox" id="vba_enabled">
+                    <input type="checkbox" id="vba_enabled" checked>
                     <label for="vba_enabled" style="margin: 0; font-size: 1em;">Enable VBA <span class="tooltip">?<span
                                 class="tooltiptext">Activates a Virtual Bass Array to actively cancel specific room mode
                                 reflections.</span></span></label>
@@ -618,7 +618,7 @@
                         <label>Reflection Attenuation per bounce (-dB) <span class="tooltip">?<span
                                     class="tooltiptext">The expected attenuation level (volume drop) of each successive
                                     room reflection.</span></span></label>
-                        <input type="number" id="vba_attn_db" value="-3.0" step="0.1">
+                        <input type="number" id="vba_attn_db" value="-4.0" step="0.1">
                     </div>
                     <div class="form-group">
                         <label>Taps (bounces to cancel) <span class="tooltip">?<span class="tooltiptext">The number of
@@ -683,14 +683,14 @@
                                     minimize time-smearing.</span></span></label>
                     </div>
                     <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
-                        <input type="checkbox" id="sub_bandlimit_low_enabled">
+                        <input type="checkbox" id="sub_bandlimit_low_enabled" checked>
                         <label for="sub_bandlimit_low_enabled" style="margin: 0; font-size: 1em;">No Correction
                             Below</label>
                     </div>
-                    <div class="form-group" id="sub_bandlimit_low_setting" style="opacity: 0.5; pointer-events: none;">
+                    <div class="form-group" id="sub_bandlimit_low_setting" style="opacity: 1; pointer-events: auto;">
                         <label>Low Cutoff (Hz) <span class="tooltip">?<span class="tooltiptext">The boundary frequency
                                     for low-frequency EQ corrections.</span></span></label>
-                        <input type="number" id="sub_bandlimit_low_hz" value="15" step="1">
+                        <input type="number" id="sub_bandlimit_low_hz" value="10" step="1">
                     </div>
                     <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
                         <input type="checkbox" id="sub_bandlimit_high_enabled">
@@ -722,7 +722,10 @@
                     <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
                         <input type="checkbox" id="mixed_phase_enabled">
                         <label for="mixed_phase_enabled" style="margin: 0; font-size: 1em;">Mixed-Phase Filter
-                            Design</label>
+                            Design <span class="tooltip">?<span class="tooltiptext">Recommend keeping OFF. When OFF,
+                                    XPDRC still generates perfect minimum phase magnitude EQ and linear phase
+                                    corrections without pre-ringing, resulting in better overall correction with fewer
+                                    artifacts.</span></span></label>
                     </div>
                     <div class="form-group" id="mixed_phase_crossover_setting">
                         <label>Mixed-Phase Crossover (Hz) <span class="tooltip">?<span class="tooltiptext">The
@@ -734,7 +737,11 @@
                     <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
                         <input type="checkbox" id="regularized_inversion">
                         <label for="regularized_inversion" style="margin: 0; font-size: 1em;">Regularized Inversion
-                            (Kirkeby)</label>
+                            (Kirkeby) <span class="tooltip">?<span class="tooltiptext">Uses Kirkeby regularization
+                                    during inversion to smartly limit boosting in deep dips, creating much safer filters
+                                    with better transient response. Defaults to OFF because hard-clipping limited
+                                    correction corrects the speakers more aggressively and gives more consistent
+                                    results.</span></span></label>
                     </div>
                     <div class="form-group" id="reg_beta_setting">
                         <label>Regularization (β dB) <span class="tooltip">?<span class="tooltiptext">The strength of
@@ -802,7 +809,7 @@
                     <div class="form-group">
                         <label>Mains Max High Boost (+dB) <span class="tooltip">?<span class="tooltiptext">The maximum
                                     allowed EQ boost for high frequencies on the main speakers.</span></span></label>
-                        <input type="number" id="max_boost_high" value="3.0" step="0.1">
+                        <input type="number" id="max_boost_high" value="6.0" step="0.1">
                     </div>
                     <div class="form-group">
                         <label>Sub Target Anchor Percentile <span class="tooltip">?<span class="tooltiptext">Adjusts the
@@ -833,34 +840,40 @@
                             <input type="number" id="vol_match_high" value="2000" step="1" style="width: 100%;">
                         </div>
                     </div>
-                    <div class="form-group" style="grid-column: span 2;">
-                        <p
-                            style="font-size: 0.8em; color: var(--secondary-color); margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">
-                            Manual Rolloff Overrides (0 = Auto-Detect)</p>
-                    </div>
-                    <div class="form-group">
-                        <label>Mains Low Rolloff (Hz) <span class="tooltip">?<span class="tooltiptext">Manually sets the
-                                    low frequency limits of the main speakers.</span></span></label>
-                        <input type="number" id="mains_low_rolloff_hz" value="0" step="1"
-                            title="Override auto low-end rolloff detection. 0 = auto-detect from measurement.">
-                    </div>
-                    <div class="form-group">
-                        <label>Mains High Rolloff (Hz) <span class="tooltip">?<span class="tooltiptext">Manually sets
-                                    the high frequency limits of the main speakers.</span></span></label>
-                        <input type="number" id="mains_high_rolloff_hz" value="0" step="1"
-                            title="Override auto high-end rolloff detection. 0 = auto-detect from measurement.">
-                    </div>
-                    <div class="form-group">
-                        <label>Sub Low Rolloff (Hz) <span class="tooltip">?<span class="tooltiptext">Manually sets the
-                                    low frequency limits of the subwoofer.</span></span></label>
-                        <input type="number" id="sub_low_rolloff_hz" value="0" step="1"
-                            title="Override auto sub low-end rolloff detection. 0 = auto-detect.">
-                    </div>
-                    <div class="form-group">
-                        <label>Sub High Rolloff (Hz) <span class="tooltip">?<span class="tooltiptext">Manually sets the
-                                    high frequency limits of the subwoofer.</span></span></label>
-                        <input type="number" id="sub_high_rolloff_hz" value="0" step="1"
-                            title="Override auto sub high-end rolloff detection. 0 = auto-detect.">
+                    <div id="manual_rolloff_container" style="display: contents;">
+                        <div class="form-group" style="grid-column: span 2;">
+                            <p
+                                style="font-size: 0.8em; color: var(--secondary-color); margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">
+                                Manual Rolloff Overrides (0 = Auto-Detect)</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Mains Low Rolloff (Hz) <span class="tooltip">?<span class="tooltiptext">Manually sets
+                                        the
+                                        low frequency limits of the main speakers.</span></span></label>
+                            <input type="number" id="mains_low_rolloff_hz" value="0" step="1"
+                                title="Override auto low-end rolloff detection. 0 = auto-detect from measurement.">
+                        </div>
+                        <div class="form-group">
+                            <label>Mains High Rolloff (Hz) <span class="tooltip">?<span class="tooltiptext">Manually
+                                        sets
+                                        the high frequency limits of the main speakers.</span></span></label>
+                            <input type="number" id="mains_high_rolloff_hz" value="0" step="1"
+                                title="Override auto high-end rolloff detection. 0 = auto-detect from measurement.">
+                        </div>
+                        <div class="form-group">
+                            <label>Sub Low Rolloff (Hz) <span class="tooltip">?<span class="tooltiptext">Manually sets
+                                        the
+                                        low frequency limits of the subwoofer.</span></span></label>
+                            <input type="number" id="sub_low_rolloff_hz" value="0" step="1"
+                                title="Override auto sub low-end rolloff detection. 0 = auto-detect.">
+                        </div>
+                        <div class="form-group">
+                            <label>Sub High Rolloff (Hz) <span class="tooltip">?<span class="tooltiptext">Manually sets
+                                        the
+                                        high frequency limits of the subwoofer.</span></span></label>
+                            <input type="number" id="sub_high_rolloff_hz" value="0" step="1"
+                                title="Override auto sub high-end rolloff detection. 0 = auto-detect.">
+                        </div>
                     </div>
                 </div>
             </details>
@@ -871,8 +884,8 @@
         <div id="phase-2-section" class="section hidden"
             style="border-color: var(--secondary-color); margin-top: 20px;">
             <h3 style="color: var(--secondary-color);">Phase 2: Final Alignment & Global EQ</h3>
-            <p style="font-size: 0.9em; color: #ccc;">Load your Base FIRs into your DSP, align the delay, and optionally
-                take a new combined measurement in REW.</p>
+            <p style="font-size: 0.9em; color: #ccc;">Set your subwoofer distance in milliseconds or let the script
+                automatically align the subwoofer for you.</p>
             <div class="grid">
                 <div class="form-group"
                     style="flex-direction: row; align-items: center; gap: 10px; grid-column: span 2;">
@@ -903,18 +916,24 @@
                     style="flex-direction: row; align-items: center; gap: 10px; grid-column: span 2;">
                     <input type="checkbox" id="global_eq_enabled" checked>
                     <label for="global_eq_enabled" style="margin: 0; font-size: 1em;">Enable Global EQ
-                        Generation</label>
+                        Generation <span class="tooltip">?<span class="tooltiptext">Generates a final overarching EQ
+                                filter on top of the individual speaker corrections to perfectly match your target house
+                                curve.</span></span></label>
                 </div>
                 <div class="form-group"
                     style="flex-direction: row; align-items: center; gap: 10px; grid-column: span 2;">
                     <input type="checkbox" id="global_eq_apply_freq_limits">
                     <label for="global_eq_apply_freq_limits" style="margin: 0; font-size: 1em;">Apply EQ
-                        Frequency Limits to Global EQ</label>
+                        Frequency Limits to Global EQ <span class="tooltip">?<span class="tooltiptext">Applies your 'No
+                                Correction Above/Below' cutoff frequencies to the Global EQ layer, forcing the
+                                overarching EQ to unity outside those bands.</span></span></label>
                 </div>
                 <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
-                    <input type="checkbox" id="auto_target_curve" checked>
+                    <input type="checkbox" id="auto_target_curve">
                     <label for="auto_target_curve" style="margin: 0; font-size: 1em;">Auto-Target Curve (Preserve
-                        Speaker Character)</label>
+                        Speaker Character) <span class="tooltip">?<span class="tooltiptext">Dynamically tracks and
+                                blends into the natural high frequency roll-off of your specific speakers to preserve
+                                their innate timbral character at the top end.</span></span></label>
                 </div>
                 <div class="form-group">
                     <label>Auto-Target Start (Hz) <span class="tooltip">?<span class="tooltiptext">The frequency where
@@ -1288,16 +1307,28 @@
             });
             // VBA section
             const vbaSection = document.getElementById('vba-settings');
-            if (!hasSub && vbaSection) {
-                vbaSection.style.opacity = '0.35';
-                vbaSection.style.pointerEvents = 'none';
+            if (vbaSection) {
+                if (!hasSub) {
+                    vbaSection.style.opacity = '0.35';
+                    vbaSection.style.pointerEvents = 'none';
+                } else {
+                    const cb = document.getElementById('vba_enabled');
+                    vbaSection.style.opacity = (cb && cb.checked) ? '1' : '0.5';
+                    vbaSection.style.pointerEvents = (cb && cb.checked) ? 'auto' : 'none';
+                }
             }
             // Sub bandlimit setting panels
             ['sub_bandlimit_low_setting', 'sub_bandlimit_high_setting'].forEach(id => {
                 const panel = document.getElementById(id);
-                if (panel && !hasSub) {
-                    panel.style.opacity = '0.35';
-                    panel.style.pointerEvents = 'none';
+                if (panel) {
+                    if (!hasSub) {
+                        panel.style.opacity = '0.35';
+                        panel.style.pointerEvents = 'none';
+                    } else {
+                        const cb = document.getElementById(id.replace('_setting', '_enabled'));
+                        panel.style.opacity = (cb && cb.checked) ? '1' : '0.5';
+                        panel.style.pointerEvents = (cb && cb.checked) ? 'auto' : 'none';
+                    }
                 }
             });
             // Phase 2 sub alignment controls
@@ -1312,9 +1343,20 @@
                 }
             });
             const manualSubDelay = document.getElementById('manual_sub_delay_setting');
-            if (manualSubDelay && !hasSub) {
-                manualSubDelay.style.opacity = '0.35';
-                manualSubDelay.style.pointerEvents = 'none';
+            if (manualSubDelay) {
+                if (!hasSub) {
+                    manualSubDelay.style.opacity = '0.35';
+                    manualSubDelay.style.pointerEvents = 'none';
+                } else {
+                    const autoAlign = document.getElementById('auto_sub_alignment');
+                    manualSubDelay.style.opacity = (autoAlign && autoAlign.checked) ? '0.5' : '1';
+                    manualSubDelay.style.pointerEvents = (autoAlign && autoAlign.checked) ? 'none' : 'auto';
+                }
+            }
+
+            const manualRolloff = document.getElementById('manual_rolloff_container');
+            if (manualRolloff) {
+                manualRolloff.style.display = hasSub ? 'none' : 'contents';
             }
         }
         document.getElementById('lfe_id').addEventListener('input', updateSubSettingsVisibility);
@@ -1475,10 +1517,10 @@
                     document.getElementById('crossover_sub').value = data.crossover_sub || 'lr4';
                     document.getElementById('phase_mains').value = data.phase_mains || 'linear';
                     document.getElementById('phase_sub').value = data.phase_sub || 'linear';
-                    document.getElementById('delay_ms').value = data.delay_ms || 100;
+                    document.getElementById('delay_ms').value = data.delay_ms || 75;
                     document.getElementById('house_boost').value = data.house_boost || 6;
                     document.getElementById('house_start').value = data.house_start || 120;
-                    document.getElementById('house_end').value = data.house_end || 20;
+                    document.getElementById('house_end').value = data.house_end || 80;
 
                     customHouseCurveB64 = data.custom_house_curve || "";
                     if (customHouseCurveB64) {
@@ -1501,13 +1543,13 @@
                         document.getElementById('prc_freq_hz').value = data.prc_freq_hz || 1000;
                     }
                     if (document.getElementById('auto_target_curve')) {
-                        document.getElementById('auto_target_curve').checked = data.auto_target_curve !== undefined ? data.auto_target_curve : true;
+                        document.getElementById('auto_target_curve').checked = data.auto_target_curve !== undefined ? data.auto_target_curve : false;
                         document.getElementById('auto_target_start_hz').value = data.auto_target_start_hz || 2000;
                     }
 
-                    document.getElementById('sub_bandlimit_low_enabled').checked = data.sub_bandlimit_low_enabled || false;
+                    document.getElementById('sub_bandlimit_low_enabled').checked = data.sub_bandlimit_low_enabled !== undefined ? data.sub_bandlimit_low_enabled : true;
                     document.getElementById('sub_bandlimit_low_enabled').dispatchEvent(new Event('change'));
-                    document.getElementById('sub_bandlimit_low_hz').value = data.sub_bandlimit_low_hz || 15;
+                    document.getElementById('sub_bandlimit_low_hz').value = data.sub_bandlimit_low_hz || 10;
                     document.getElementById('sub_bandlimit_high_enabled').checked = data.sub_bandlimit_high_enabled || false;
                     document.getElementById('sub_bandlimit_high_enabled').dispatchEvent(new Event('change'));
                     document.getElementById('sub_bandlimit_high_hz').value = data.sub_bandlimit_high_hz || 150;
@@ -1516,10 +1558,10 @@
                     document.getElementById('mains_bandlimit_high_enabled').dispatchEvent(new Event('change'));
                     document.getElementById('mains_bandlimit_high_hz').value = data.mains_bandlimit_high_hz || 10000;
 
-                    document.getElementById('vba_enabled').checked = data.vba_enabled || false;
+                    document.getElementById('vba_enabled').checked = data.vba_enabled !== undefined ? data.vba_enabled : true;
                     document.getElementById('vba_enabled').dispatchEvent(new Event('change'));
                     document.getElementById('vba_modes').value = data.vba_modes_raw || '';
-                    document.getElementById('vba_attn_db').value = data.vba_attn_db || -3.0;
+                    document.getElementById('vba_attn_db').value = data.vba_attn_db || -4.0;
                     document.getElementById('vba_taps').value = data.vba_taps || 4;
 
                     document.getElementById('sample_rate').value = data.sample_rate || 48000;
@@ -1529,7 +1571,7 @@
                     document.getElementById('trans_start').value = data.trans_start || 200;
                     document.getElementById('trans_end').value = data.trans_end || 300;
                     document.getElementById('max_boost_low').value = data.max_boost_low || 6.0;
-                    document.getElementById('max_boost_high').value = data.max_boost_high || 3.0;
+                    document.getElementById('max_boost_high').value = data.max_boost_high || 6.0;
                     document.getElementById('sub_percentile').value = data.sub_percentile || 15;
                     document.getElementById('global_smoothing').value = data.global_smoothing || "erb";
                     document.getElementById('vol_match_low').value = data.vol_match_low || 500;
