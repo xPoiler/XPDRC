@@ -435,31 +435,112 @@
         #floating-reset .icon {
             font-size: 1.2em;
         }
+
+        /* Language Switcher */
+        .language-switcher {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 10001;
+            background: rgba(22, 22, 26, 0.7);
+            backdrop-filter: blur(8px);
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .language-switcher:hover {
+            background: rgba(30, 30, 36, 0.9);
+            border-color: var(--primary-color);
+        }
+
+        .flag-btn {
+            font-size: 1.4em;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 6px;
+            transition: transform 0.2s ease, background 0.2s ease;
+            user-select: none;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+        }
+
+        .lang-btn {
+            background: none;
+            border: 2px solid transparent;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lang-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.1);
+        }
+
+        .lang-btn.active {
+            border-color: var(--accent-primary);
+            background: rgba(187, 134, 252, 0.15);
+        }
+
+        .lang-btn img {
+            width: 24px;
+            height: auto;
+            border-radius: 2px;
+        }
     </style>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 </head>
 
 <body>
 
+    <div class="language-switcher">
+        <button class="lang-btn active" onclick="changeLanguage('en')" title="English">
+            <img src="https://flagcdn.com/w40/gb.png" alt="English">
+        </button>
+        <button class="lang-btn" onclick="changeLanguage('it')" title="Italiano">
+            <img src="https://flagcdn.com/w40/it.png" alt="Italiano">
+        </button>
+        <button class="lang-btn" onclick="changeLanguage('de')" title="Deutsch">
+            <img src="https://flagcdn.com/w40/de.png" alt="Deutsch">
+        </button>
+        <button class="lang-btn" onclick="changeLanguage('fr')" title="Français">
+            <img src="https://flagcdn.com/w40/fr.png" alt="Français">
+        </button>
+    </div>
+
     <div class="container">
         <div class="header-actions">
             <div style="display: flex; align-items: center; gap: 15px;">
                 <img src="{{ url_for('static', filename='logo.png') }}" alt="XPDRC Logo"
                     style="height: 40px; width: auto; border-radius: 8px;">
-                <h1>XPDRC 1.0 Web DSP</h1>
+                <h1 data-i18n="app_title">XPDRC 1.0 Web DSP</h1>
             </div>
             <div style="display: flex; gap: 10px; align-items: center;">
                 <button type="button" class="btn-run"
-                    style="margin: 0; padding: 10px 15px; width: auto; font-size: 1rem;" onclick="startWizard()">✨ Run
+                    style="margin: 0; padding: 10px 15px; width: auto; font-size: 1rem;" onclick="startWizard()"
+                    data-i18n="run_wizard">✨ Run
                     Setup Wizard</button>
-                <button class="btn-secondary" onclick="document.getElementById('file-input').click()">📂 Import
+                <button class="btn-secondary" onclick="document.getElementById('file-input').click()"
+                    data-i18n="import_config">📂 Import
                     Config</button>
                 <input type="file" id="file-input" class="hidden" accept=".json" onchange="importConfig(event)">
                 <div style="position: relative;">
                     <a href="/docs"
                         style="position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 12px; color: white; font-size: 0.85em; text-decoration: underline; text-underline-offset: 4px; font-weight: 500; white-space: nowrap; opacity: 0.9; transition: opacity 0.2s;"
-                        onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.9'">📖 Documentation</a>
-                    <button class="btn-secondary" onclick="exportConfig()" style="margin: 0;">💾 Export Config</button>
+                        onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.9'"
+                        data-i18n="documentation">📖 Documentation</a>
+                    <button class="btn-secondary" onclick="exportConfig()" style="margin: 0;"
+                        data-i18n="export_config">💾 Export Config</button>
                 </div>
             </div>
         </div>
@@ -467,32 +548,37 @@
         <form id="config-form">
             <div class="grid">
                 <div class="section">
-                    <h3>System IDs & Crosssover</h3>
+                    <h3 data-i18n="system_ids_header">System IDs & Crossover</h3>
                     <div class="form-group">
-                        <label>Mains REW IDs (comma separated, e.g., 1,2) <span class="tooltip">?<span
-                                    class="tooltiptext">Comma-separated measurement IDs in REW corresponding to your
+                        <label data-i18n="mains_ids_label">Mains REW IDs (comma separated, e.g., 1,2) <span
+                                class="tooltip">?<span class="tooltiptext" data-i18n-tip="mains_ids_tip">Comma-separated
+                                    measurement IDs in REW corresponding to your
                                     main speakers.</span></span></label>
                         <input type="text" id="mains_ids" required>
                     </div>
                     <div class="form-group">
-                        <label>Subwoofer REW ID <span class="tooltip">?<span class="tooltiptext">The measurement ID in
+                        <label data-i18n="sub_id_label">Subwoofer REW ID <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="sub_id_tip">The measurement ID in
                                     REW corresponding to your subwoofer.</span></span></label>
                         <input type="text" id="lfe_id">
                     </div>
                     <div class="form-group">
-                        <label>Crossover Frequency (Hz) <span class="tooltip">?<span class="tooltiptext">The frequency
+                        <label data-i18n="crossover_freq_label">Crossover Frequency (Hz) <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="crossover_freq_tip">The frequency
                                     point where bass is transitioned from mains to the subwoofer.</span></span></label>
                         <input type="number" id="fc" value="80" step="0.1">
                     </div>
                     <div class="form-group">
-                        <label>Target Base Delay (ms) <span class="tooltip">?<span class="tooltiptext">Added baseline
+                        <label data-i18n="target_delay_label">Target Base Delay (ms) <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="target_delay_tip">Added baseline
                                     delay to anchor the filter generation. Use 75ms+ for best deep bass correction
                                     (movies/music). Keep under 50ms for low latency (gaming/desktop
                                     use).</span></span></label>
                         <input type="number" id="delay_ms" value="75" step="0.1">
                     </div>
                     <div class="form-group">
-                        <label>Mains Crossover Type <span class="tooltip">?<span class="tooltiptext">The filter topology
+                        <label data-i18n="mains_xo_type_label">Mains Crossover Type <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="mains_xo_type_tip">The filter topology
                                     and slope applied to the high-pass side of the mains.</span></span></label>
                         <select id="crossover_mains">
                             <option value="none">None (Bypass)</option>
@@ -507,7 +593,8 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Subwoofer Crossover Type <span class="tooltip">?<span class="tooltiptext">The filter
+                        <label data-i18n="sub_xo_type_label">Subwoofer Crossover Type <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="sub_xo_type_tip">The filter
                                     topology and slope applied to the low-pass side of the
                                     subwoofer.</span></span></label>
                         <select id="crossover_sub">
@@ -523,7 +610,8 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Mains Crossover Phase <span class="tooltip">?<span class="tooltiptext">Determines whether
+                        <label data-i18n="mains_xo_phase_label">Mains Crossover Phase <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="mains_xo_phase_tip">Determines whether
                                     the mains crossover introduces phase shift (minimum) or remains perfectly
                                     phase-aligned (linear).</span></span></label>
                         <select id="phase_mains">
@@ -532,7 +620,8 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Subwoofer Crossover Phase <span class="tooltip">?<span class="tooltiptext">Determines
+                        <label data-i18n="sub_xo_phase_label">Subwoofer Crossover Phase <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="sub_xo_phase_tip">Determines
                                     whether the sub crossover introduces phase shift (minimum) or remains perfectly
                                     phase-aligned (linear).</span></span></label>
                         <select id="phase_sub">
@@ -543,33 +632,38 @@
                 </div>
 
                 <div class="section">
-                    <h3>House Curve</h3>
+                    <h3 data-i18n="house_curve_header">House Curve</h3>
                     <div class="form-group">
-                        <label>Bass Boost (+dB) <span class="tooltip">?<span class="tooltiptext">The maximum decibel
+                        <label data-i18n="bass_boost_label">Bass Boost (+dB) <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="bass_boost_tip">The maximum decibel
                                     increase applied to the low-end of your target house curve.</span></span></label>
                         <input type="number" id="house_boost" value="6" step="0.1">
                     </div>
                     <div class="form-group">
-                        <label>Slope Start (Hz) <span class="tooltip">?<span class="tooltiptext">The frequency where the
+                        <label data-i18n="slope_start_label">Slope Start (Hz) <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="slope_start_tip">The frequency where the
                                     bass boost slope begins to rise.</span></span></label>
                         <input type="number" id="house_start" value="120">
                     </div>
                     <div class="form-group">
-                        <label>Slope End (Hz) <span class="tooltip">?<span class="tooltiptext">The frequency where the
+                        <label data-i18n="slope_end_label">Slope End (Hz) <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="slope_end_tip">The frequency where the
                                     bass boost slope reaches its maximum level.</span></span></label>
                         <input type="number" id="house_end" value="80">
                     </div>
                     <div class="form-group">
-                        <label>Custom House Curve (.txt optional) <span class="tooltip">?<span
-                                    class="tooltiptext">Upload a text file defining a custom frequency and amplitude
+                        <label data-i18n="custom_house_curve_label">Custom House Curve (.txt optional) <span
+                                class="tooltip">?<span class="tooltiptext" data-i18n-tip="custom_house_curve_tip">Upload
+                                    a text file defining a custom frequency and amplitude
                                     target curve.</span></span></label>
                         <div style="display: flex; gap: 10px; align-items: center;">
                             <input type="file" id="house_curve_file" accept=".txt" style="flex-grow: 1;"
                                 onchange="loadHouseCurveFile(event)">
                             <button type="button" class="btn-secondary" onclick="clearHouseCurveFile()"
-                                style="padding: 10px;" title="Clear File">❌</button>
+                                style="padding: 10px;" title="Clear File" data-i18n-title="clear_file_title">❌</button>
                         </div>
-                        <p id="house_curve_status" style="font-size: 0.8em; color: #aaa; margin-top: 5px;">No custom
+                        <p id="house_curve_status" style="font-size: 0.8em; color: #aaa; margin-top: 5px;"
+                            data-i18n="no_custom_curve">No custom
                             curve loaded. Using parameters above.</p>
                     </div>
                 </div>
@@ -581,47 +675,55 @@
             </div>
 
             <div class="section">
-                <h3>Acoustic Delays (ms)</h3>
+                <h3 data-i18n="acoustic_delays_header">Acoustic Delays (ms)</h3>
                 <div class="form-group"
                     style="flex-direction: row; align-items: center; gap: 10px; margin-bottom: 10px;">
                     <input type="checkbox" id="auto_align_enabled" checked>
-                    <label for="auto_align_enabled" style="margin: 0; font-size: 1em;">Auto Time-Align (from REW IR peak
+                    <label for="auto_align_enabled" style="margin: 0; font-size: 1em;" data-i18n="auto_align_label">Auto
+                        Time-Align (from REW IR peak
                         times)</label>
                 </div>
-                <p id="delay-manual-hint" style="font-size: 0.85em; color: #aaa; display: none;">Enter the raw delay for
+                <p id="delay-manual-hint" style="font-size: 0.85em; color: #aaa; display: none;"
+                    data-i18n="manual_delay_hint">Enter the raw delay for
                     each speaker ID. Use 0.0 for your
                     timing reference.</p>
-                <p id="delay-auto-hint" style="font-size: 0.85em; color: var(--secondary-color);">Delays will be
+                <p id="delay-auto-hint" style="font-size: 0.85em; color: var(--secondary-color);"
+                    data-i18n="auto_delay_hint">Delays will be
                     auto-detected from REW measurement IR peaks.</p>
                 <div class="grid" id="dynamic-delays-container" style="opacity: 0.35; pointer-events: none;">
-                    <p style="color: #777; grid-column: span 2; margin-top: 0;">Enter Mains or Subwoofer IDs above to
+                    <p style="color: #777; grid-column: span 2; margin-top: 0;" data-i18n="enter_ids_hint">Enter Mains
+                        or Subwoofer IDs above to
                         generate delay inputs.</p>
                 </div>
             </div>
 
             <div class="section">
-                <h3>Virtual Bass Array (Subwoofer Only)</h3>
+                <h3 data-i18n="vba_header">Virtual Bass Array (Subwoofer Only)</h3>
                 <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
                     <input type="checkbox" id="vba_enabled" checked>
-                    <label for="vba_enabled" style="margin: 0; font-size: 1em;">Enable VBA <span class="tooltip">?<span
-                                class="tooltiptext">Activates a Virtual Bass Array to actively cancel specific room mode
+                    <label for="vba_enabled" style="margin: 0; font-size: 1em;" data-i18n="enable_vba_label">Enable VBA
+                        <span class="tooltip">?<span class="tooltiptext" data-i18n-tip="enable_vba_tip">Activates a
+                                Virtual Bass Array to actively cancel specific room mode
                                 reflections.</span></span></label>
                 </div>
                 <div class="grid" id="vba-settings" style="opacity: 0.5; pointer-events: none; margin-top: 15px;">
                     <div class="form-group">
-                        <label>Manual Modes (Hz, comma separated. Leave blank for Auto-Detect) <span
-                                class="tooltip">?<span class="tooltiptext">Comma-separated list of room mode frequencies
+                        <label data-i18n="vba_modes_label">Manual Modes (Hz, comma separated. Leave blank for
+                            Auto-Detect) <span class="tooltip">?<span class="tooltiptext"
+                                    data-i18n-tip="vba_modes_tip">Comma-separated list of room mode frequencies
                                     to cancel; leave blank for automatic detection.</span></span></label>
                         <input type="text" id="vba_modes">
                     </div>
                     <div class="form-group">
-                        <label>Reflection Attenuation per bounce (-dB) <span class="tooltip">?<span
-                                    class="tooltiptext">The expected attenuation level (volume drop) of each successive
+                        <label data-i18n="vba_attn_label">Reflection Attenuation per bounce (-dB) <span
+                                class="tooltip">?<span class="tooltiptext" data-i18n-tip="vba_attn_tip">The expected
+                                    attenuation level (volume drop) of each successive
                                     room reflection.</span></span></label>
                         <input type="number" id="vba_attn_db" value="-4.0" step="0.1">
                     </div>
                     <div class="form-group">
-                        <label>Taps (bounces to cancel) <span class="tooltip">?<span class="tooltiptext">The number of
+                        <label data-i18n="vba_taps_label">Taps (bounces to cancel) <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="vba_taps_tip">The number of
                                     sequential room reflections the VBA should attempt to cancel.</span></span></label>
                         <input type="number" id="vba_taps" value="4">
                     </div>
@@ -629,33 +731,38 @@
             </div>
 
             <div class="section">
-                <h3>Processing Features</h3>
+                <h3 data-i18n="processing_features_header">Processing Features</h3>
 
                 <!-- Mains Processing -->
-                <p
-                    style="font-size: 0.8em; color: var(--secondary-color); margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">
+                <p style="font-size: 0.8em; color: var(--secondary-color); margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;"
+                    data-i18n="mains_sub_header">
                     Mains</p>
                 <div class="grid" style="margin-bottom: 15px;">
                     <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
                         <input type="checkbox" id="mains_eq_enabled" checked>
-                        <label for="mains_eq_enabled" style="margin: 0; font-size: 1em;">Magnitude EQ <span
-                                class="tooltip">?<span class="tooltiptext">Flattens the frequency response amplitude of
+                        <label for="mains_eq_enabled" style="margin: 0; font-size: 1em;"
+                            data-i18n="magnitude_eq_label">Magnitude EQ <span class="tooltip">?<span class="tooltiptext"
+                                    data-i18n-tip="magnitude_eq_tip">Flattens the frequency response amplitude of
                                     the main speakers.</span></span></label>
                     </div>
                     <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
                         <input type="checkbox" id="mains_phase_lin_enabled" checked>
-                        <label for="mains_phase_lin_enabled" style="margin: 0; font-size: 1em;">Phase
+                        <label for="mains_phase_lin_enabled" style="margin: 0; font-size: 1em;"
+                            data-i18n="phase_lin_label">Phase
                             Linearization</label>
                     </div>
                     <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
                         <input type="checkbox" id="vol_align_enabled" checked>
-                        <label for="vol_align_enabled" style="margin: 0; font-size: 1em;">Volume Alignment <span
-                                class="tooltip">?<span class="tooltiptext">Automatically adjusts the overall volume of
+                        <label for="vol_align_enabled" style="margin: 0; font-size: 1em;"
+                            data-i18n="vol_align_label">Volume Alignment <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="vol_align_tip">Automatically adjusts the overall
+                                    volume of
                                     the speakers to match.</span></span></label>
                     </div>
                     <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
                         <input type="checkbox" id="mains_bandlimit_high_enabled">
-                        <label for="mains_bandlimit_high_enabled" style="margin: 0; font-size: 1em;">No Correction
+                        <label for="mains_bandlimit_high_enabled" style="margin: 0; font-size: 1em;"
+                            data-i18n="no_correction_above_label">No Correction
                             Above</label>
                         <div id="mains_bandlimit_high_setting" style="opacity: 0.5; pointer-events: none;">
                             <input type="number" id="mains_bandlimit_high_hz" value="10000" step="100"
@@ -667,68 +774,80 @@
                 </div>
 
                 <!-- Subwoofer Processing -->
-                <p
-                    style="font-size: 0.8em; color: var(--secondary-color); margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">
+                <p style="font-size: 0.8em; color: var(--secondary-color); margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;"
+                    data-i18n="subwoofer_sub_header">
                     Subwoofer</p>
                 <div class="grid" style="margin-bottom: 15px;">
                     <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
                         <input type="checkbox" id="sub_eq_enabled" checked>
-                        <label for="sub_eq_enabled" style="margin: 0; font-size: 1em;">Magnitude EQ (House
+                        <label for="sub_eq_enabled" style="margin: 0; font-size: 1em;"
+                            data-i18n="magnitude_eq_house_label">Magnitude EQ (House
                             Curve)</label>
                     </div>
                     <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
                         <input type="checkbox" id="sub_gd_eq_enabled" checked>
-                        <label for="sub_gd_eq_enabled" style="margin: 0; font-size: 1em;">Group Delay EQ <span
-                                class="tooltip">?<span class="tooltiptext">Equalizes the subwoofer's group delay to
+                        <label for="sub_gd_eq_enabled" style="margin: 0; font-size: 1em;"
+                            data-i18n="group_delay_eq_label">Group Delay EQ <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="group_delay_eq_tip">Equalizes the subwoofer's
+                                    group delay to
                                     minimize time-smearing.</span></span></label>
                     </div>
                     <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
                         <input type="checkbox" id="sub_bandlimit_low_enabled" checked>
-                        <label for="sub_bandlimit_low_enabled" style="margin: 0; font-size: 1em;">No Correction
+                        <label for="sub_bandlimit_low_enabled" style="margin: 0; font-size: 1em;"
+                            data-i18n="no_correction_below_label">No Correction
                             Below</label>
                     </div>
                     <div class="form-group" id="sub_bandlimit_low_setting" style="opacity: 1; pointer-events: auto;">
-                        <label>Low Cutoff (Hz) <span class="tooltip">?<span class="tooltiptext">The boundary frequency
+                        <label data-i18n="low_cutoff_label">Low Cutoff (Hz) <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="low_cutoff_tip">The boundary frequency
                                     for low-frequency EQ corrections.</span></span></label>
                         <input type="number" id="sub_bandlimit_low_hz" value="10" step="1">
                     </div>
                     <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
                         <input type="checkbox" id="sub_bandlimit_high_enabled">
-                        <label for="sub_bandlimit_high_enabled" style="margin: 0; font-size: 1em;">No Correction
+                        <label for="sub_bandlimit_high_enabled" style="margin: 0; font-size: 1em;"
+                            data-i18n="no_correction_above_label">No Correction
                             Above</label>
                     </div>
                     <div class="form-group" id="sub_bandlimit_high_setting" style="opacity: 0.5; pointer-events: none;">
-                        <label>High Cutoff (Hz) <span class="tooltip">?<span class="tooltiptext">The boundary frequency
+                        <label data-i18n="high_cutoff_label">High Cutoff (Hz) <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="high_cutoff_tip">The boundary frequency
                                     for high-frequency EQ corrections.</span></span></label>
                         <input type="number" id="sub_bandlimit_high_hz" value="150" step="1">
                     </div>
                 </div>
 
                 <!-- Phase & Advanced -->
-                <p
-                    style="font-size: 0.8em; color: var(--secondary-color); margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">
+                <p style="font-size: 0.8em; color: var(--secondary-color); margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;"
+                    data-i18n="phase_inv_header">
                     Phase & Inversion</p>
                 <div class="grid">
                     <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
                         <input type="checkbox" id="preringing_reduction" checked>
-                        <label for="preringing_reduction" style="margin: 0; font-size: 1em;">Preringing Reduction
+                        <label for="preringing_reduction" style="margin: 0; font-size: 1em;"
+                            data-i18n="preringing_reduction_label">Preringing Reduction
                             (PRC)</label>
                     </div>
                     <div class="form-group" id="prc_freq_setting">
-                        <label>PRC Transition (Hz) <span class="tooltip">?<span class="tooltiptext">The frequency at
+                        <label data-i18n="prc_transition_label">PRC Transition (Hz) <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="prc_transition_tip">The frequency at
                                     which the preringing reduction algorithm takes effect.</span></span></label>
                         <input type="number" id="prc_freq_hz" value="1000" step="1">
                     </div>
                     <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
                         <input type="checkbox" id="mixed_phase_enabled">
-                        <label for="mixed_phase_enabled" style="margin: 0; font-size: 1em;">Mixed-Phase Filter
-                            Design <span class="tooltip">?<span class="tooltiptext">Recommend keeping OFF. When OFF,
+                        <label for="mixed_phase_enabled" style="margin: 0; font-size: 1em;"
+                            data-i18n="mixed_phase_label">Mixed-Phase Filter
+                            Design <span class="tooltip">?<span class="tooltiptext"
+                                    data-i18n-tip="mixed_phase_tip">Recommend keeping OFF. When OFF,
                                     XPDRC still generates perfect minimum phase magnitude EQ and linear phase
                                     corrections without pre-ringing, resulting in better overall correction with fewer
                                     artifacts.</span></span></label>
                     </div>
                     <div class="form-group" id="mixed_phase_crossover_setting">
-                        <label>Mixed-Phase Crossover (Hz) <span class="tooltip">?<span class="tooltiptext">The
+                        <label data-i18n="mixed_phase_xo_label">Mixed-Phase Crossover (Hz) <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="mixed_phase_xo_tip">The
                                     transition point where the filter switches from minimum-phase to
                                     linear-phase.</span></span></label>
                         <input type="number" id="mixed_phase_crossover_hz" value="500" step="10"
@@ -736,15 +855,18 @@
                     </div>
                     <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
                         <input type="checkbox" id="regularized_inversion">
-                        <label for="regularized_inversion" style="margin: 0; font-size: 1em;">Regularized Inversion
-                            (Kirkeby) <span class="tooltip">?<span class="tooltiptext">Uses Kirkeby regularization
+                        <label for="regularized_inversion" style="margin: 0; font-size: 1em;"
+                            data-i18n="regularized_inv_label">Regularized Inversion
+                            (Kirkeby) <span class="tooltip">?<span class="tooltiptext"
+                                    data-i18n-tip="regularized_inv_tip">Uses Kirkeby regularization
                                     during inversion to smartly limit boosting in deep dips, creating much safer filters
                                     with better transient response. Defaults to OFF because hard-clipping limited
                                     correction corrects the speakers more aggressively and gives more consistent
                                     results.</span></span></label>
                     </div>
                     <div class="form-group" id="reg_beta_setting">
-                        <label>Regularization (β dB) <span class="tooltip">?<span class="tooltiptext">The strength of
+                        <label data-i18n="regularization_beta_label">Regularization (β dB) <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="regularization_beta_tip">The strength of
                                     regularization applied; higher values result in gentler, safer EQ
                                     corrections.</span></span></label>
                         <input type="number" id="reg_beta_db" value="12.0" step="0.5"
@@ -754,10 +876,11 @@
             </div>
 
             <details>
-                <summary>⚙️ Advanced DSP Settings</summary>
+                <summary data-i18n="advanced_dsp_header">⚙️ Advanced DSP Settings</summary>
                 <div class="grid">
                     <div class="form-group">
-                        <label>Sample Rate (Hz) <span class="tooltip">?<span class="tooltiptext">The sampling rate of
+                        <label data-i18n="sample_rate_label">Sample Rate (Hz) <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="sample_rate_tip">The sampling rate of
                                     the generated FIR filters.</span></span></label>
                         <select id="sample_rate">
                             <option value="44100">44100</option>
@@ -767,7 +890,8 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Filter Taps <span class="tooltip">?<span class="tooltiptext">The resolution lengths of
+                        <label data-i18n="filter_taps_label">Filter Taps <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="filter_taps_tip">The resolution lengths of
                                     the generated FIR filters; higher values offer more bass
                                     precision.</span></span></label>
                         <select id="filter_taps">
@@ -780,45 +904,56 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>REW API URL <span class="tooltip">?<span class="tooltiptext">The network address for the
+                        <label data-i18n="rew_api_url_label">REW API URL <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="rew_api_url_tip">The network address for the
                                     active Room EQ Wizard API server instance.</span></span></label>
                         <input type="text" id="rew_api_url" value="http://localhost:4735">
                     </div>
                     <div class="form-group">
-                        <label>Mains FDW Cycles <span class="tooltip">?<span class="tooltiptext">The frequency-dependent
+                        <label data-i18n="mains_fdw_label">Mains FDW Cycles <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="mains_fdw_tip">The frequency-dependent
                                     window size used to smooth main speaker measurements.</span></span></label>
                         <input type="number" id="fdw_cycles" value="5.0" step="0.1">
                     </div>
                     <div class="form-group">
-                        <label>EQ Transition Band (Start Hz) <span class="tooltip">?<span class="tooltiptext">The lower
+                        <label data-i18n="eq_trans_start_label">EQ Transition Band (Start Hz) <span
+                                class="tooltip">?<span class="tooltiptext" data-i18n-tip="eq_trans_start_tip">The lower
                                     frequency defining the transition window for blending smoothed
                                     EQ.</span></span></label>
                         <input type="number" id="trans_start" value="200" step="1">
                     </div>
                     <div class="form-group">
-                        <label>EQ Transition Band (End Hz) <span class="tooltip">?<span class="tooltiptext">The upper
+                        <label data-i18n="eq_trans_end_label">EQ Transition Band (End Hz) <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="eq_trans_end_tip">The upper
                                     frequency defining the transition window for blending smoothed
                                     EQ.</span></span></label>
                         <input type="number" id="trans_end" value="300" step="1">
                     </div>
                     <div class="form-group">
-                        <label>Mains Max Low Boost (+dB) <span class="tooltip">?<span class="tooltiptext">The maximum
+                        <label data-i18n="mains_max_low_boost_label">Mains Max Low Boost (+dB) <span
+                                class="tooltip">?<span class="tooltiptext" data-i18n-tip="mains_max_low_boost_tip">The
+                                    maximum
                                     allowed EQ boost for low frequencies on the main speakers.</span></span></label>
                         <input type="number" id="max_boost_low" value="6.0" step="0.1">
                     </div>
                     <div class="form-group">
-                        <label>Mains Max High Boost (+dB) <span class="tooltip">?<span class="tooltiptext">The maximum
+                        <label data-i18n="mains_max_high_boost_label">Mains Max High Boost (+dB) <span
+                                class="tooltip">?<span class="tooltiptext" data-i18n-tip="mains_max_high_boost_tip">The
+                                    maximum
                                     allowed EQ boost for high frequencies on the main speakers.</span></span></label>
                         <input type="number" id="max_boost_high" value="6.0" step="0.1">
                     </div>
                     <div class="form-group">
-                        <label>Sub Target Anchor Percentile <span class="tooltip">?<span class="tooltiptext">Adjusts the
+                        <label data-i18n="sub_target_anchor_label">Sub Target Anchor Percentile <span
+                                class="tooltip">?<span class="tooltiptext" data-i18n-tip="sub_target_anchor_tip">Adjusts
+                                    the
                                     relative volume target anchor for the subwoofer EQ generation.</span></span></label>
                         <input type="number" id="sub_percentile" value="15" step="1"
                             title="Lower = cuts more, anchors lower.">
                     </div>
                     <div class="form-group">
-                        <label>Global EQ Smoothing <span class="tooltip">?<span class="tooltiptext">The smoothing
+                        <label data-i18n="global_eq_smoothing_label">Global EQ Smoothing <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="global_eq_smoothing_tip">The smoothing
                                     algorithm applied strictly to the global system EQ pass.</span></span></label>
                         <select id="global_smoothing">
                             <option value="erb" selected>ERB</option>
@@ -832,8 +967,9 @@
                         </select>
                     </div>
                     <div class="form-group" style="grid-column: span 2;">
-                        <label>Volume Match Range (Low Hz - High Hz) <span class="tooltip">?<span
-                                    class="tooltiptext">The frequency range evaluated to compute and match speaker
+                        <label data-i18n="vol_match_range_label">Volume Match Range (Low Hz - High Hz) <span
+                                class="tooltip">?<span class="tooltiptext" data-i18n-tip="vol_match_range_tip">The
+                                    frequency range evaluated to compute and match speaker
                                     volumes.</span></span></label>
                         <div style="display: flex; gap: 10px;">
                             <input type="number" id="vol_match_low" value="500" step="1" style="width: 100%;">
@@ -842,33 +978,39 @@
                     </div>
                     <div id="manual_rolloff_container" style="display: contents;">
                         <div class="form-group" style="grid-column: span 2;">
-                            <p
-                                style="font-size: 0.8em; color: var(--secondary-color); margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">
+                            <p style="font-size: 0.8em; color: var(--secondary-color); margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;"
+                                data-i18n="manual_rolloff_header">
                                 Manual Rolloff Overrides (0 = Auto-Detect)</p>
                         </div>
                         <div class="form-group">
-                            <label>Mains Low Rolloff (Hz) <span class="tooltip">?<span class="tooltiptext">Manually sets
+                            <label data-i18n="mains_low_rolloff_label">Mains Low Rolloff (Hz) <span
+                                    class="tooltip">?<span class="tooltiptext"
+                                        data-i18n-tip="mains_low_rolloff_tip">Manually sets
                                         the
                                         low frequency limits of the main speakers.</span></span></label>
                             <input type="number" id="mains_low_rolloff_hz" value="0" step="1"
                                 title="Override auto low-end rolloff detection. 0 = auto-detect from measurement.">
                         </div>
                         <div class="form-group">
-                            <label>Mains High Rolloff (Hz) <span class="tooltip">?<span class="tooltiptext">Manually
+                            <label data-i18n="mains_high_rolloff_label">Mains High Rolloff (Hz) <span
+                                    class="tooltip">?<span class="tooltiptext"
+                                        data-i18n-tip="mains_high_rolloff_tip">Manually
                                         sets
                                         the high frequency limits of the main speakers.</span></span></label>
                             <input type="number" id="mains_high_rolloff_hz" value="0" step="1"
                                 title="Override auto high-end rolloff detection. 0 = auto-detect from measurement.">
                         </div>
                         <div class="form-group">
-                            <label>Sub Low Rolloff (Hz) <span class="tooltip">?<span class="tooltiptext">Manually sets
+                            <label data-i18n="sub_low_rolloff_label">Sub Low Rolloff (Hz) <span class="tooltip">?<span
+                                        class="tooltiptext" data-i18n-tip="sub_low_rolloff_tip">Manually sets
                                         the
                                         low frequency limits of the subwoofer.</span></span></label>
                             <input type="number" id="sub_low_rolloff_hz" value="0" step="1"
                                 title="Override auto sub low-end rolloff detection. 0 = auto-detect.">
                         </div>
                         <div class="form-group">
-                            <label>Sub High Rolloff (Hz) <span class="tooltip">?<span class="tooltiptext">Manually sets
+                            <label data-i18n="sub_high_rolloff_label">Sub High Rolloff (Hz) <span class="tooltip">?<span
+                                        class="tooltiptext" data-i18n-tip="sub_high_rolloff_tip">Manually sets
                                         the
                                         high frequency limits of the subwoofer.</span></span></label>
                             <input type="number" id="sub_high_rolloff_hz" value="0" step="1"
@@ -878,23 +1020,28 @@
                 </div>
             </details>
 
-            <button type="button" class="btn-run" onclick="runPhase1()">▶ 1. Generate Base FIRs</button>
+            <button type="button" class="btn-run" onclick="runPhase1()" data-i18n="generate_base_firs_btn">▶ 1. Generate
+                Base FIRs</button>
         </form>
 
         <div id="phase-2-section" class="section hidden"
             style="border-color: var(--secondary-color); margin-top: 20px;">
-            <h3 style="color: var(--secondary-color);">Phase 2: Final Alignment & Global EQ</h3>
-            <p style="font-size: 0.9em; color: #ccc;">Set your subwoofer distance in milliseconds or let the script
+            <h3 style="color: var(--secondary-color);" data-i18n="phase_2_header">Phase 2: Final Alignment & Global EQ
+            </h3>
+            <p style="font-size: 0.9em; color: #ccc;" data-i18n="phase_2_descr">Set your subwoofer distance in
+                milliseconds or let the script
                 automatically align the subwoofer for you.</p>
             <div class="grid">
                 <div class="form-group"
                     style="flex-direction: row; align-items: center; gap: 10px; grid-column: span 2;">
                     <input type="checkbox" id="auto_sub_alignment" checked>
-                    <label for="auto_sub_alignment" style="margin: 0; font-size: 1em;">Automate Subwoofer Alignment
+                    <label for="auto_sub_alignment" style="margin: 0; font-size: 1em;"
+                        data-i18n="auto_sub_align_label">Automate Subwoofer Alignment
                         (Match Mains Group Delay)</label>
                 </div>
                 <div class="form-group" id="manual_sub_delay_setting" style="opacity: 0.5; pointer-events: none;">
-                    <label>Manual Subwoofer Delay applied in REW (ms) <span class="tooltip">?<span class="tooltiptext">A
+                    <label data-i18n="manual_sub_delay_label">Manual Subwoofer Delay applied in REW (ms) <span
+                            class="tooltip">?<span class="tooltiptext" data-i18n-tip="manual_sub_delay_tip">A
                                 manual time offset applied strictly to the subwoofer's delay
                                 alignment.</span></span></label>
                     <input type="number" id="align_lfe_ms" value="0.0" step="0.01">
@@ -903,87 +1050,109 @@
                     style="flex-direction: row; align-items: center; gap: 10px; grid-column: span 2;">
                     <input type="checkbox" id="auto_rew_import" checked>
                     <label for="auto_rew_import"
-                        style="margin: 0; font-size: 1em; color: var(--secondary-color); font-weight: bold;">Auto-Process
+                        style="margin: 0; font-size: 1em; color: var(--secondary-color); font-weight: bold;"
+                        data-i18n="auto_rew_import_label">Auto-Process
                         Phase 2 in REW (Import, Multiply, Average)</label>
                 </div>
                 <div class="form-group" id="global_id_setting" style="opacity: 0.5; pointer-events: none;">
-                    <label>Global Measurement REW ID (Leave blank if Auto-Processing) <span class="tooltip">?<span
-                                class="tooltiptext">The ID of a combined system measurement for generating the final
+                    <label data-i18n="global_id_label">Global Measurement REW ID (Leave blank if Auto-Processing) <span
+                            class="tooltip">?<span class="tooltiptext" data-i18n-tip="global_id_tip">The ID of a
+                                combined system measurement for generating the final
                                 Global EQ layer.</span></span></label>
                     <input type="text" id="global_id" placeholder="e.g., 5">
                 </div>
                 <div class="form-group"
                     style="flex-direction: row; align-items: center; gap: 10px; grid-column: span 2;">
                     <input type="checkbox" id="global_eq_enabled" checked>
-                    <label for="global_eq_enabled" style="margin: 0; font-size: 1em;">Enable Global EQ
-                        Generation <span class="tooltip">?<span class="tooltiptext">Generates a final overarching EQ
+                    <label for="global_eq_enabled" style="margin: 0; font-size: 1em;"
+                        data-i18n="enable_global_eq_label">Enable Global EQ
+                        Generation <span class="tooltip">?<span class="tooltiptext"
+                                data-i18n-tip="enable_global_eq_tip">Generates a final overarching EQ
                                 filter on top of the individual speaker corrections to perfectly match your target house
                                 curve.</span></span></label>
                 </div>
                 <div class="form-group"
                     style="flex-direction: row; align-items: center; gap: 10px; grid-column: span 2;">
                     <input type="checkbox" id="global_eq_apply_freq_limits">
-                    <label for="global_eq_apply_freq_limits" style="margin: 0; font-size: 1em;">Apply EQ
-                        Frequency Limits to Global EQ <span class="tooltip">?<span class="tooltiptext">Applies your 'No
+                    <label for="global_eq_apply_freq_limits" style="margin: 0; font-size: 1em;"
+                        data-i18n="apply_freq_limits_label">Apply EQ
+                        Frequency Limits to Global EQ <span class="tooltip">?<span class="tooltiptext"
+                                data-i18n-tip="apply_freq_limits_tip">Applies your 'No
                                 Correction Above/Below' cutoff frequencies to the Global EQ layer, forcing the
                                 overarching EQ to unity outside those bands.</span></span></label>
                 </div>
                 <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
                     <input type="checkbox" id="auto_target_curve">
-                    <label for="auto_target_curve" style="margin: 0; font-size: 1em;">Auto-Target Curve (Preserve
-                        Speaker Character) <span class="tooltip">?<span class="tooltiptext">Dynamically tracks and
+                    <label for="auto_target_curve" style="margin: 0; font-size: 1em;"
+                        data-i18n="auto_target_curve_label">Auto-Target Curve (Preserve
+                        Speaker Character) <span class="tooltip">?<span class="tooltiptext"
+                                data-i18n-tip="auto_target_curve_tip">Dynamically tracks and
                                 blends into the natural high frequency roll-off of your specific speakers to preserve
                                 their innate timbral character at the top end.</span></span></label>
                 </div>
                 <div class="form-group">
-                    <label>Auto-Target Start (Hz) <span class="tooltip">?<span class="tooltiptext">The frequency where
+                    <label data-i18n="auto_target_start_label">Auto-Target Start (Hz) <span class="tooltip">?<span
+                                class="tooltiptext" data-i18n-tip="auto_target_start_tip">The frequency where
                                 the dynamic automatic target curve evaluation begins tracking the
                                 speaker.</span></span></label>
                     <input type="number" id="auto_target_start_hz" value="2000" step="10">
                 </div>
             </div>
-            <button type="button" class="btn-run" onclick="runPhase2()">▶ 2. Bake Final FIRs & Global EQ</button>
+            <button type="button" class="btn-run" onclick="runPhase2()" data-i18n="bake_final_firs_btn">▶ 2. Bake Final
+                FIRs & Global EQ</button>
         </div>
 
-        <div id="console-output">Ready...</div>
+        <div id="console-output" data-i18n="console_ready">Ready...</div>
     </div>
 
     <!-- Setup Wizard Modal -->
     <div id="wizard-modal" class="hidden">
         <div class="wizard-content">
-            <h2 id="wizard-title" style="margin-top: 0;">Automated Measurement Setup</h2>
-            <p id="wizard-desc" style="color: #aaa; margin-bottom: 25px;">This wizard will guide you through taking
+            <h2 id="wizard-title" style="margin-top: 0;" data-i18n="wizard_title">Automated Measurement Setup</h2>
+            <p id="wizard-desc" style="color: #aaa; margin-bottom: 25px;" data-i18n="wizard_desc">This wizard will guide
+                you through taking
                 multi-position REW measurements and automatically align them for spatial averaging.</p>
 
             <!-- Step 1: Device Setup -->
             <div id="wizard-step-1" class="wizard-step active">
                 <div class="form-group">
                     <p style="text-align: left; font-size: 0.95em; color: #ddd; margin-bottom: 20px;">
-                        <strong>Important:</strong> Because REW requires a "Pro License" to automate
-                        sweeps via its API, this wizard is designed to work manually with the <strong>Free</strong>
-                        version of
-                        REW.
+                        <strong data-i18n="wiz_important">Important:</strong> <span data-i18n="wiz_license_note">Because
+                            REW requires a "Pro License" to automate
+                            sweeps via its API, this wizard is designed to work manually with the <strong>Free</strong>
+                            version of
+                            REW.</span>
                     </p>
                     <p style="text-align: left; font-size: 0.9em; color: #bbb;">
-                        1. Open REW, go to preferences, and start the <strong>API Server</strong>.<br>
-                        2. Open the <strong>Measure</strong> dialog.<br>
-                        3. Set Range to <strong>0 to 24000 Hz</strong>.<br>
-                        4. Set Level to <strong>-12.0 dBFS</strong>.<br>
-                        5. Set Timing to <strong>Acoustic Timing Reference</strong>. (Use <strong>C</strong> if you have
-                        a center channel, otherwise use <strong>L</strong>).
+                        <span data-i18n="wiz_step1_1">1. Open REW, go to preferences, and start the <strong>API
+                                Server</strong>.</span><br>
+                        <span data-i18n="wiz_step1_2">2. Open the <strong>Measure</strong> dialog.</span><br>
+                        <span data-i18n="wiz_step1_3">3. Set Range to <strong>0 to 24000 Hz</strong>.</span><br>
+                        <span data-i18n="wiz_step1_4">4. Set Level to <strong>-12.0 dBFS</strong>.</span><br>
+                        <span data-i18n="wiz_step1_5">5. Set Timing to <strong>Acoustic Timing Reference</strong>. (Use
+                            <strong>C</strong> if you have
+                            a center channel, otherwise use <strong>L</strong>).</span>
                     </p>
                 </div>
                 <div class="form-group">
-                    <label>Speakers you will measure</label>
+                    <label data-i18n="wiz_speakers_label">Speakers you will measure</label>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-                        <label><input type="checkbox" class="wiz-ch" value="L" checked> Left (L)</label>
-                        <label><input type="checkbox" class="wiz-ch" value="R" checked> Right (R)</label>
-                        <label><input type="checkbox" class="wiz-ch" value="C"> Center (C)</label>
-                        <label><input type="checkbox" class="wiz-ch" value="LFE" checked> Subwoofer (LFE)</label>
-                        <label><input type="checkbox" class="wiz-ch" value="SL"> Surround L (SL)</label>
-                        <label><input type="checkbox" class="wiz-ch" value="SR"> Surround R (SR)</label>
-                        <label><input type="checkbox" class="wiz-ch" value="BL"> Back L (BL)</label>
-                        <label><input type="checkbox" class="wiz-ch" value="BR"> Back R (BR)</label>
+                        <label><input type="checkbox" class="wiz-ch" value="L" checked> <span data-i18n="wiz_ch_l">Left
+                                (L)</span></label>
+                        <label><input type="checkbox" class="wiz-ch" value="R" checked> <span data-i18n="wiz_ch_r">Right
+                                (R)</span></label>
+                        <label><input type="checkbox" class="wiz-ch" value="C"> <span data-i18n="wiz_ch_c">Center
+                                (C)</span></label>
+                        <label><input type="checkbox" class="wiz-ch" value="LFE" checked> <span
+                                data-i18n="wiz_ch_lfe">Subwoofer (LFE)</span></label>
+                        <label><input type="checkbox" class="wiz-ch" value="SL"> <span data-i18n="wiz_ch_sl">Surround L
+                                (SL)</span></label>
+                        <label><input type="checkbox" class="wiz-ch" value="SR"> <span data-i18n="wiz_ch_sr">Surround R
+                                (SR)</span></label>
+                        <label><input type="checkbox" class="wiz-ch" value="BL"> <span data-i18n="wiz_ch_bl">Back L
+                                (BL)</span></label>
+                        <label><input type="checkbox" class="wiz-ch" value="BR"> <span data-i18n="wiz_ch_br">Back R
+                                (BR)</span></label>
                     </div>
                 </div>
             </div>
@@ -1006,7 +1175,8 @@
                         Measure: <span id="wiz_current_ch"
                             style="color: #fff; background: var(--secondary-color); padding: 2px 8px; border-radius: 4px;">L</span>
                     </p>
-                    <p style="font-size: 0.9em; color: #ddd; margin-top: 15px; text-align: center;">In REW, select the
+                    <p style="font-size: 0.9em; color: #ddd; margin-top: 15px; text-align: center;"
+                        data-i18n="wiz_step2_instr">In REW, select the
                         correct output channel for this speaker and click <strong>Start Measuring</strong>.</p>
                 </div>
 
@@ -1019,29 +1189,32 @@
 
             <!-- Step 3: Processing -->
             <div id="wizard-step-3" class="wizard-step" style="text-align: center;">
-                <h3 style="color: var(--secondary-color);">Aligning & Averaging</h3>
+                <h3 style="color: var(--secondary-color);" data-i18n="wiz_step3_title">Aligning & Averaging</h3>
                 <div class="loader"></div>
-                <p>Cross-correlating off-center measurements to MLP and computing spatial averages...</p>
-                <p style="font-size: 0.85em; color: #888;">This may take a minute depending on the number of positions.
-                </p>
+                <p data-i18n="wiz_step3_p1">Cross-correlating off-center measurements to MLP and computing spatial
+                    averages...</p>
+                <p style="font-size: 0.85em; color: #888;" data-i18n="wiz_step3_p2">This may take a minute depending on
+                    the number of positions.</p>
             </div>
 
             <!-- Step 4: Finished -->
             <div id="wizard-step-4" class="wizard-step" style="text-align: center;">
-                <h3 style="color: var(--secondary-color);">🎉 Setup Complete</h3>
-                <p>The spatial averages have been computed and sent to REW.</p>
-                <p>The system has automatically populated your configuration with the new measurement IDs.</p>
-                <p style="font-size: 0.85em; color: #888; margin-top: 20px;">You can now review the advanced DSP
-                    settings or proceed directly to Phase 1.</p>
+                <h3 style="color: var(--secondary-color);" data-i18n="wiz_step4_title">🎉 Setup Complete</h3>
+                <p data-i18n="wiz_step4_p1">The spatial averages have been computed and sent to REW.</p>
+                <p data-i18n="wiz_step4_p2">The system has automatically populated your configuration with the new
+                    measurement IDs.</p>
+                <p style="font-size: 0.85em; color: #888; margin-top: 20px;" data-i18n="wiz_step4_p3">You can now review
+                    the advanced DSP settings or proceed directly to Phase 1.</p>
             </div>
 
             <div class="wizard-footer" id="wizard-footer">
-                <button type="button" class="btn-secondary" id="wiz_btn_cancel" onclick="closeWizard()">Cancel</button>
+                <button type="button" class="btn-secondary" id="wiz_btn_cancel" onclick="closeWizard()"
+                    data-i18n="wiz_btn_cancel">Cancel</button>
                 <div style="display: flex; gap: 10px;">
-                    <button type="button" class="btn-secondary hidden" id="wiz_btn_skip"
-                        onclick="finishMeasurements()">Skip Remaining / Finish</button>
+                    <button type="button" class="btn-secondary hidden" id="wiz_btn_skip" onclick="finishMeasurements()"
+                        data-i18n="wiz_btn_skip">Skip Remaining / Finish</button>
                     <button type="button" class="btn-run" style="margin: 0; padding: 10px 20px; width: auto;"
-                        id="wiz_btn_next" onclick="nextWizardStep()">Next ➔</button>
+                        id="wiz_btn_next" onclick="nextWizardStep()" data-i18n="wiz_btn_next">Next ➔</button>
                 </div>
             </div>
         </div>
@@ -1050,7 +1223,7 @@
     <!-- Floating Reset Button -->
     <div id="floating-reset" onclick="resetToDefaults()">
         <span class="icon">↺</span>
-        <span>Reset Defaults</span>
+        <span data-i18n="floating_reset">Reset Defaults</span>
     </div>
 
     <script>
@@ -1764,32 +1937,35 @@
         }
 
         function updatePosUI() {
-            document.getElementById('wiz_pos_title').innerText = `Position ${wizState.currPos}`;
+            const lang = document.documentElement.lang || 'en';
+            const t = translations[lang] || translations.en;
+
+            document.getElementById('wiz_pos_title').innerText = `${t.wiz_pos_label} ${wizState.currPos}`;
             if (wizState.currPos === 1) {
-                document.getElementById('wiz_pos_instr').innerText = "Place the microphone exactly at your Main Listening Position (MLP). This will be the timing anchor.";
+                document.getElementById('wiz_pos_instr').innerText = t.wiz_pos_mlp;
                 document.getElementById('wiz_btn_skip').classList.add('hidden');
             } else {
-                document.getElementById('wiz_pos_instr').innerText = `Move the microphone to position ${wizState.currPos}.`;
+                document.getElementById('wiz_pos_instr').innerText = t.wiz_pos_move.replace('{pos}', wizState.currPos);
                 document.getElementById('wiz_btn_skip').classList.remove('hidden');
             }
 
             // Are we done with this position?
             if (wizState.currChIndex >= wizState.channels.length) {
-                document.getElementById('wiz_ch_instr').innerHTML = `<span style="color: #03dac6;">Position ${wizState.currPos} Complete!</span>`;
+                document.getElementById('wiz_ch_instr').innerHTML = `<span style="color: #03dac6;">${t.wiz_pos_complete.replace('{pos}', wizState.currPos)}</span>`;
                 document.getElementById('wiz_measuring_state').classList.add('hidden');
                 document.getElementById('wiz_btn_next').classList.remove('hidden'); // Allow manual advancement to next pos/finish
 
                 if (wizState.currPos >= wizState.maxPos) {
-                    document.getElementById('wiz_btn_next').innerText = "Finish";
+                    document.getElementById('wiz_btn_next').innerText = t.wiz_finish_btn;
                 } else {
-                    document.getElementById('wiz_btn_next').innerText = `Next Position ➔`;
+                    document.getElementById('wiz_btn_next').innerText = t.wiz_next_pos_btn;
                 }
             } else {
                 const currentCh = wizState.channels[wizState.currChIndex];
-                document.getElementById('wiz_ch_instr').innerHTML = `Measure: <span style="color: #1e1e1e; background: #03dac6; padding: 2px 8px; border-radius: 4px;">${currentCh}</span>`;
+                document.getElementById('wiz_ch_instr').innerHTML = `${t.wiz_measure_label} <span style="color: #1e1e1e; background: #03dac6; padding: 2px 8px; border-radius: 4px;">${currentCh}</span>`;
                 document.getElementById('wiz_measuring_state').classList.remove('hidden');
                 document.getElementById('wiz_btn_next').classList.add('hidden'); // Hide next until position is done
-                document.getElementById('wiz_poll_status').innerText = `Waiting for measurement of ${currentCh} in REW...`;
+                document.getElementById('wiz_poll_status').innerText = t.wiz_wait_meas_rew.replace('{ch}', currentCh);
             }
 
             // Build channel progress chips
@@ -1905,12 +2081,15 @@
         }
 
         function finishMeasurements() {
-            if (wizState.measurements[wizState.channels[0]].length === 0) {
-                alert("You haven't completed any measurements yet.");
+            const lang = document.documentElement.lang || 'en';
+            const t = translations[lang] || translations.en;
+
+            if (Object.keys(wizState.measurements).length === 0 || !wizState.channels[0] || wizState.measurements[wizState.channels[0]].length === 0) {
+                alert(t.wiz_alert_no_meas);
                 return;
             }
             if (wizState.measurements[wizState.channels[0]].length < 3) {
-                if (!confirm("You have measured fewer than 3 positions. The spatial average will be less accurate. Are you sure you want to finish?")) {
+                if (!confirm(t.wiz_confirm_few_meas)) {
                     return;
                 }
             }
@@ -1972,6 +2151,781 @@
     <div
         style="text-align: center; font-size: 0.8em; color: var(--text-muted); margin-top: 30px; padding-bottom: 20px;">
         build 06.03.26/v16</div>
+
+    <script>
+        const translations = {
+            en: {
+                app_title: "XPDRC 1.0 Web DSP",
+                main_title: "XPDRC - Room Correction FIR Designer",
+                run_wizard: "✨ Run Setup Wizard",
+                import_config: "📂 Import Config",
+                export_config: "💾 Export Config",
+                documentation: "📖 Documentation",
+                docs_link: "Documentation",
+                github_link: "GitHub",
+                configuration_header: "Configuration",
+                system_ids_header: "System IDs & Crossover",
+                mains_ids_label: "Mains REW IDs (comma separated, e.g., 1,2) ",
+                mains_ids_tip: "Comma-separated measurement IDs in REW corresponding to your main speakers.",
+                sub_id_label: "Subwoofer REW ID ",
+                sub_id_tip: "The measurement ID in REW corresponding to your subwoofer.",
+                crossover_freq_label: "Crossover Frequency (Hz) ",
+                crossover_freq_tip: "The frequency point where bass is transitioned from mains to the subwoofer.",
+                target_delay_label: "Target Base Delay (ms) ",
+                target_delay_tip: "Added baseline delay to anchor the filter generation. Use 75ms+ for best deep bass correction (movies/music). Keep under 50ms for low latency (gaming/desktop use).",
+                mains_xo_type_label: "Mains Crossover Type ",
+                mains_xo_type_tip: "The filter topology and slope applied to the high-pass side of the mains.",
+                sub_xo_type_label: "Subwoofer Crossover Type ",
+                sub_xo_type_tip: "The filter topology and slope applied to the low-pass side of the subwoofer.",
+                mains_xo_phase_label: "Mains Crossover Phase ",
+                mains_xo_phase_tip: "Determines whether the mains crossover introduces phase shift (minimum) or remains perfectly phase-aligned (linear).",
+                sub_xo_phase_label: "Subwoofer Crossover Phase ",
+                sub_xo_phase_tip: "Determines whether the sub crossover introduces phase shift (minimum) or remains perfectly phase-aligned (linear).",
+                house_curve_header: "House Curve",
+                bass_boost_label: "Bass Boost (+dB) ",
+                bass_boost_tip: "The maximum decibel increase applied to the low-end of your target house curve.",
+                slope_start_label: "Slope Start (Hz) ",
+                slope_start_tip: "The frequency where the bass boost slope begins to rise.",
+                slope_end_label: "Slope End (Hz) ",
+                slope_end_tip: "The frequency where the bass boost slope reaches its maximum level.",
+                custom_house_curve_label: "Custom House Curve (.txt optional) ",
+                custom_house_curve_tip: "Upload a text file defining a custom frequency and amplitude target curve.",
+                clear_file_title: "Clear File",
+                no_custom_curve: "No custom curve loaded. Using parameters above.",
+                acoustic_delays_header: "Acoustic Delays (ms)",
+                auto_align_label: "Auto Time-Align (from REW IR peak times)",
+                manual_delay_hint: "Enter the raw delay for each speaker ID. Use 0.0 for your timing reference.",
+                auto_delay_hint: "Delays will be auto-detected from REW measurement IR peaks.",
+                enter_ids_hint: "Enter Mains or Subwoofer IDs above to generate delay inputs.",
+                vba_header: "Virtual Bass Array (Subwoofer Only)",
+                enable_vba_label: "Enable VBA ",
+                enable_vba_tip: "Activates a Virtual Bass Array to actively cancel specific room mode reflections.",
+                vba_modes_label: "Manual Modes (Hz, comma separated. Leave blank for Auto-Detect) ",
+                vba_modes_tip: "Comma-separated list of room mode frequencies to cancel; leave blank for automatic detection.",
+                vba_attn_label: "Reflection Attenuation per bounce (-dB) ",
+                vba_attn_tip: "The expected attenuation level (volume drop) of each successive room reflection.",
+                vba_taps_label: "Taps (bounces to cancel) ",
+                vba_taps_tip: "The number of sequential room reflections the VBA should attempt to cancel.",
+                processing_features_header: "Processing Features",
+                mains_sub_header: "Mains",
+                subwoofer_sub_header: "Subwoofer",
+                magnitude_eq_label: "Magnitude EQ ",
+                magnitude_eq_tip: "Flattens the frequency response amplitude of the main speakers.",
+                phase_lin_label: "Phase Linearization",
+                vol_align_label: "Volume Alignment ",
+                vol_align_tip: "Automatically adjusts the overall volume of the speakers to match.",
+                no_correction_above_label: "No Correction Above",
+                magnitude_eq_house_label: "Magnitude EQ (House Curve)",
+                group_delay_eq_label: "Group Delay EQ ",
+                group_delay_eq_tip: "Equalizes the subwoofer's group delay to minimize time-smearing.",
+                no_correction_below_label: "No Correction Below",
+                low_cutoff_label: "Low Cutoff (Hz) ",
+                low_cutoff_tip: "The boundary frequency for low-frequency EQ corrections.",
+                high_cutoff_label: "High Cutoff (Hz) ",
+                high_cutoff_tip: "The boundary frequency for high-frequency EQ corrections.",
+                phase_inv_header: "Phase & Inversion",
+                preringing_reduction_label: "Preringing Reduction (PRC)",
+                prc_transition_label: "PRC Transition (Hz) ",
+                prc_transition_tip: "The frequency at which the preringing reduction algorithm takes effect.",
+                mixed_phase_label: "Mixed-Phase Filter Design ",
+                mixed_phase_tip: "Recommend keeping OFF. When OFF, XPDRC still generates perfect minimum phase magnitude EQ and linear phase corrections without pre-ringing, resulting in better overall correction with fewer artifacts.",
+                mixed_phase_xo_label: "Mixed-Phase Crossover (Hz) ",
+                mixed_phase_xo_tip: "The transition point where the filter switches from minimum-phase to linear-phase.",
+                regularized_inv_label: "Regularized Inversion (Kirkeby) ",
+                regularized_inv_tip: "Uses Kirkeby regularization during inversion to smartly limit boosting in deep dips, creating much safer filters with better transient response. Defaults to OFF because hard-clipping limited correction corrects the speakers more aggressively and gives more consistent results.",
+                regularization_beta_label: "Regularization (β dB) ",
+                regularization_beta_tip: "The strength of regularization applied; higher values result in gentler, safer EQ corrections.",
+                advanced_dsp_header: "⚙️ Advanced DSP Settings",
+                sample_rate_label: "Sample Rate (Hz) ",
+                sample_rate_tip: "The sampling rate of the generated FIR filters.",
+                filter_taps_label: "Filter Taps ",
+                filter_taps_tip: "The resolution lengths of the generated FIR filters; higher values offer more bass precision.",
+                rew_api_url_label: "REW API URL ",
+                rew_api_url_tip: "The network address for the active Room EQ Wizard API server instance.",
+                mains_fdw_label: "Mains FDW Cycles ",
+                mains_fdw_tip: "The frequency-dependent window size used to smooth main speaker measurements.",
+                eq_trans_start_label: "EQ Transition Band (Start Hz) ",
+                eq_trans_start_tip: "The lower frequency defining the transition window for blending smoothed EQ.",
+                eq_trans_end_label: "EQ Transition Band (End Hz) ",
+                eq_trans_end_tip: "The upper frequency defining the transition window for blending smoothed EQ.",
+                mains_max_low_boost_label: "Mains Max Low Boost (+dB) ",
+                mains_max_low_boost_tip: "The maximum allowed EQ boost for low frequencies on the main speakers.",
+                mains_max_high_boost_label: "Mains Max High Boost (+dB) ",
+                mains_max_high_boost_tip: "The maximum allowed EQ boost for high frequencies on the main speakers.",
+                sub_target_anchor_label: "Sub Target Anchor Percentile ",
+                sub_target_anchor_tip: "Adjusts the relative volume target anchor for the subwoofer EQ generation.",
+                global_eq_smoothing_label: "Global EQ Smoothing ",
+                global_eq_smoothing_tip: "The smoothing algorithm applied strictly to the global system EQ pass.",
+                vol_match_range_label: "Volume Match Range (Low Hz - High Hz) ",
+                vol_match_range_tip: "The frequency range evaluated to compute and match speaker volumes.",
+                manual_rolloff_header: "Manual Rolloff Overrides (0 = Auto-Detect)",
+                mains_low_rolloff_label: "Mains Low Rolloff (Hz) ",
+                mains_low_rolloff_tip: "Manually sets the low frequency limits of the main speakers.",
+                mains_high_rolloff_label: "Mains High Rolloff (Hz) ",
+                mains_high_rolloff_tip: "Manually sets the high frequency limits of the main speakers.",
+                sub_low_rolloff_label: "Sub Low Rolloff (Hz) ",
+                sub_low_rolloff_tip: "Manually sets the low frequency limits of the subwoofer.",
+                sub_high_rolloff_label: "Sub High Rolloff (Hz) ",
+                sub_high_rolloff_tip: "Manually sets the high frequency limits of the subwoofer.",
+                generate_base_firs_btn: "▶ 1. Generate Base FIRs",
+                phase_2_header: "Phase 2: Final Alignment & Global EQ",
+                phase_2_descr: "Set your subwoofer distance in milliseconds or let the script automatically align the subwoofer for you.",
+                auto_sub_align_label: "Automate Subwoofer Alignment (Match Mains Group Delay)",
+                manual_sub_delay_label: "Manual Subwoofer Delay applied in REW (ms) ",
+                manual_sub_delay_tip: "A manual time offset applied strictly to the subwoofer's delay alignment.",
+                auto_rew_import_label: "Auto-Process Phase 2 in REW (Import, Multiply, Average)",
+                global_id_label: "Global Measurement REW ID (Leave blank if Auto-Processing) ",
+                global_id_tip: "The ID of a combined system measurement for generating the final Global EQ layer.",
+                enable_global_eq_label: "Enable Global EQ Generation ",
+                enable_global_eq_tip: "Generates a final overarching EQ filter on top of the individual speaker corrections to perfectly match your target house curve.",
+                apply_freq_limits_label: "Apply EQ Frequency Limits to Global EQ ",
+                apply_freq_limits_tip: "Applies your 'No Correction Above/Below' cutoff frequencies to the Global EQ layer, forcing the overarching EQ to unity outside those bands.",
+                auto_target_curve_label: "Auto-Target Curve (Preserve Speaker Character) ",
+                auto_target_curve_tip: "Dynamically tracks and blends into the natural high frequency roll-off of your specific speakers to preserve their innate timbral character at the top end.",
+                auto_target_start_label: "Auto-Target Start (Hz) ",
+                auto_target_start_tip: "The frequency where the dynamic automatic target curve evaluation begins tracking the speaker.",
+                bake_final_firs_btn: "▶ 2. Bake Final FIRs & Global EQ",
+                console_ready: "Ready...",
+                wizard_title: "Automated Measurement Setup",
+                wizard_desc: "This wizard will guide you through taking multi-position REW measurements and automatically align them for spatial averaging.",
+                wiz_important: "Important:",
+                wiz_license_note: "Because REW requires a \"Pro License\" to automate sweeps via its API, this wizard is designed to work manually with the Free version of REW.",
+                wiz_step1_1: "1. Open REW, go to preferences, and start the API Server.",
+                wiz_step1_2: "2. Open the Measure dialog.",
+                wiz_step1_3: "3. Set Range to 0 to 24000 Hz.",
+                wiz_step1_4: "4. Set Level to -12.0 dBFS.",
+                wiz_step1_5: "5. Set Timing to Acoustic Timing Reference. (Use C if you have a center channel, otherwise use L).",
+                wiz_speakers_label: "Speakers you will measure",
+                wiz_ch_l: "Left (L)",
+                wiz_ch_r: "Right (R)",
+                wiz_ch_c: "Center (C)",
+                wiz_ch_lfe: "Subwoofer (LFE)",
+                wiz_ch_sl: "Surround L (SL)",
+                wiz_ch_sr: "Surround R (SR)",
+                wiz_ch_bl: "Back L (BL)",
+                wiz_ch_br: "Back R (BR)",
+                wiz_pos_header: "Position 1",
+                wiz_pos_mlp: "Place the microphone exactly at your Main Listening Position (MLP). This will be the timing anchor.",
+                wiz_btn_cancel: "Cancel",
+                wiz_btn_skip: "Skip / Finish",
+                wiz_btn_next: "Next ➔",
+                wiz_pos_label: "Position",
+                wiz_pos_move: "Move the microphone to position {pos}.",
+                wiz_pos_complete: "Position {pos} Complete!",
+                wiz_measure_label: "Measure:",
+                wiz_wait_meas_rew: "Waiting for measurement of {ch} in REW...",
+                wiz_finish_btn: "Finish",
+                wiz_next_pos_btn: "Next Position ➔",
+                wiz_step2_instr: "In REW, select the correct output channel for this speaker and click <strong>Start Measuring</strong>.",
+                wiz_step3_title: "Aligning & Averaging",
+                wiz_step3_p1: "Cross-correlating off-center measurements to MLP and computing spatial averages...",
+                wiz_step3_p2: "This may take a minute depending on the number of positions.",
+                wiz_step4_title: "🎉 Setup Complete",
+                wiz_step4_p1: "The spatial averages have been computed and sent to REW.",
+                wiz_step4_p2: "The system has automatically populated your configuration with the new measurement IDs.",
+                wiz_step4_p3: "You can now review the advanced DSP settings or proceed directly to Phase 1.",
+                wiz_alert_no_meas: "You haven't completed any measurements yet.",
+                wiz_confirm_few_meas: "You have measured fewer than 3 positions. The spatial average will be less accurate. Are you sure you want to finish?",
+                floating_reset: "Reset Defaults"
+            },
+            it: {
+                app_title: "XPDRC 1.0 Web DSP",
+                main_title: "XPDRC - Progettazione Filtri FIR per Correzione Ambientale",
+                run_wizard: "✨ Avvia Setup Wizard",
+                import_config: "📂 Importa Config",
+                export_config: "💾 Esporta Config",
+                documentation: "📖 Documentazione",
+                docs_link: "Documentazione",
+                github_link: "GitHub",
+                configuration_header: "Configurazione",
+                system_ids_header: "ID Sistema e Crossover",
+                mains_ids_label: "ID REW Diffusori (separati da virgola, es. 1,2) ",
+                mains_ids_tip: "ID delle misurazioni in REW corrispondenti ai diffusori principali, separati da virgola.",
+                sub_id_label: "ID REW Subwoofer ",
+                sub_id_tip: "L'ID della misurazione in REW corrispondente al subwoofer.",
+                crossover_freq_label: "Frequenza di Crossover (Hz) ",
+                crossover_freq_tip: "Il punto di frequenza in cui i bassi passano dai diffusori principali al subwoofer.",
+                target_delay_label: "Ritardo Base Target (ms) ",
+                target_delay_tip: "Ritardo base aggiunto per ancorare la generazione del filtro. Usa 75ms+ per la migliore correzione dei bassi profondi (film/musica). Mantieni sotto i 50ms per una bassa latenza (gaming/uso desktop).",
+                mains_xo_type_label: "Tipo Crossover Diffusori ",
+                mains_xo_type_tip: "La topologia e la pendenza del filtro applicate al lato passa-alto dei diffusori principali.",
+                sub_xo_type_label: "Tipo Crossover Subwoofer ",
+                sub_xo_type_tip: "La topologia e la pendenza del filtro applicate al lato passa-basso del subwoofer.",
+                mains_xo_phase_label: "Fase Crossover Diffusori ",
+                mains_xo_phase_tip: "Determina se il crossover dei diffusori principali introduce una rotazione di fase (minima) o rimane perfettamente allineato in fase (lineare).",
+                sub_xo_phase_label: "Fase Crossover Subwoofer ",
+                sub_xo_phase_tip: "Determina se il crossover del subwoofer introduce una rotazione di fase (minima) o rimane perfettamente allineato in fase (lineare).",
+                house_curve_header: "Curva del Suono (House Curve)",
+                bass_boost_label: "Incremento Bassi (+dB) ",
+                bass_boost_tip: "L'aumento massimo in decibel applicato alla parte bassa della curva target.",
+                slope_start_label: "Inizio Pendenza (Hz) ",
+                slope_start_tip: "La frequenza dove la pendenza dell'incremento bassi inizia a salire.",
+                slope_end_label: "Fine Pendenza (Hz) ",
+                slope_end_tip: "La frequenza dove la pendenza raggiunge il livello massimo.",
+                custom_house_curve_label: "Curva Personalizzata (.txt opzionale) ",
+                custom_house_curve_tip: "Carica un file di testo che definisce una curva target personalizzata di frequenza e ampiezza.",
+                clear_file_title: "Cancella File",
+                no_custom_curve: "Nessuna curva personalizzata caricata. Uso i parametri sopra.",
+                acoustic_delays_header: "Ritardi Acustici (ms)",
+                auto_align_label: "Auto Allineamento Temporale (da picchi IR REW)",
+                manual_delay_hint: "Inserisci il ritardo grezzo per ogni ID diffisore. Usa 0.0 per il tuo riferimento temporale.",
+                auto_delay_hint: "I ritardi verranno rilevati automaticamente dai picchi IR di REW.",
+                enter_ids_hint: "Inserisci gli ID dei Mains o Subwoofer sopra per generare i campi dei ritardi.",
+                vba_header: "Virtual Bass Array (Solo Subwoofer)",
+                enable_vba_label: "Abilita VBA ",
+                enable_vba_tip: "Attiva un Virtual Bass Array per cancellare attivamente riflessioni specifiche dei modi della stanza.",
+                vba_modes_label: "Modi Manuali (Hz, separati da virgola. Lascia vuoto per Auto-Detect) ",
+                vba_modes_tip: "Lista di frequenze dei modi ambientali da cancellare; lascia vuoto per il rilevamento automatico.",
+                vba_attn_label: "Attenuazione Riflessione per rimbalzo (-dB) ",
+                vba_attn_tip: "Il livello di attenuazione previsto di ogni riflessione successiva nella stanza.",
+                vba_taps_label: "Taps (rimbalzi da cancellare) ",
+                vba_taps_tip: "Il numero di riflessioni sequenziali che il VBA tenterà di cancellare.",
+                processing_features_header: "Caratteristiche di Elaborazione",
+                mains_sub_header: "Diffusori Principali",
+                subwoofer_sub_header: "Subwoofer",
+                magnitude_eq_label: "EQ Magnitudo ",
+                magnitude_eq_tip: "Appiattisce l'ampiezza della risposta in frequenza dei diffusori principali.",
+                phase_lin_label: "Linearizzazione Fase",
+                vol_align_label: "Allineamento Volume ",
+                vol_align_tip: "Regola automaticamente il volume generale dei diffusori per farli corrispondere.",
+                no_correction_above_label: "Nessuna Correzione Sopra",
+                magnitude_eq_house_label: "EQ Magnitudo (Curva House)",
+                group_delay_eq_label: "EQ Ritardo di Gruppo ",
+                group_delay_eq_tip: "Equalizza il ritardo di gruppo del subwoofer per minimizzare la sfocatura temporale.",
+                no_correction_below_label: "Nessuna Correzione Sotto",
+                low_cutoff_label: "Taglio Basso (Hz) ",
+                low_cutoff_tip: "La frequenza limite per le correzioni EQ a bassa frequenza.",
+                high_cutoff_label: "Taglio Alto (Hz) ",
+                high_cutoff_tip: "La frequenza limite per le correzioni EQ ad alta frequenza.",
+                phase_inv_header: "Fase e Inversione",
+                preringing_reduction_label: "Riduzione Pre-Ringing (PRC)",
+                prc_transition_label: "Transizione PRC (Hz) ",
+                prc_transition_tip: "La frequenza alla quale entra in funzione l'algoritmo di riduzione del pre-ringing.",
+                mixed_phase_label: "Progettazione Filtro Fase Mista ",
+                mixed_phase_tip: "Si consiglia di tenere OFF. Quando è OFF, XPDRC genera comunque un EQ di magnitudo a fase minima perfetto e correzioni a fase lineare senza pre-ringing, ottenendo una migliore correzione complessiva con meno artefatti.",
+                mixed_phase_xo_label: "Crossover Fase Mista (Hz) ",
+                mixed_phase_xo_tip: "Il punto di transizione in cui il filtro passa da fase minima a fase lineare.",
+                regularized_inv_label: "Inversione Regolarizzata (Kirkeby) ",
+                regularized_inv_tip: "Utilizza la regolarizzazione di Kirkeby durante l'inversione per limitare intelligentemente il boost nei buchi profondi, creando filtri molto più sicuri con una migliore risposta ai transienti. Di default è OFF perché la correzione con hard-clipping corregge i diffusori in modo più aggressivo e dà risultati più costanti.",
+                regularization_beta_label: "Regolarizzazione (β dB) ",
+                regularization_beta_tip: "La forza della regolarizzazione applicata; valori più alti risultano in correzioni EQ più dolci e sicure.",
+                advanced_dsp_header: "⚙️ Impostazioni DSP Avanzate",
+                sample_rate_label: "Frequenza di Campionamento (Hz) ",
+                sample_rate_tip: "La frequenza di campionamento dei filtri FIR generati.",
+                filter_taps_label: "Taps del Filtro ",
+                filter_taps_tip: "La risoluzione dei filtri FIR generati; valori più alti offrono maggiore precisione nei bassi.",
+                rew_api_url_label: "URL API REW ",
+                rew_api_url_tip: "L'indirizzo di rete per l'istanza del server API di Room EQ Wizard attiva.",
+                mains_fdw_label: "Cicli FDW Diffusori Principali ",
+                mains_fdw_tip: "La dimensione della finestra dipendente dalla frequenza utilizzata per smussare le misurazioni dei diffusori principali.",
+                eq_trans_start_label: "Banda Transizione EQ (Inizio Hz) ",
+                eq_trans_start_tip: "La frequenza inferiore che definisce la finestra di transizione per la miscelazione dell'EQ smussato.",
+                eq_trans_end_label: "Banda Transizione EQ (Fine Hz) ",
+                eq_trans_end_tip: "La frequenza superiore che definisce la finestra di transizione per la miscelazione dell'EQ smussato.",
+                mains_max_low_boost_label: "Boost Bassi Max Diffusori (+dB) ",
+                mains_max_low_boost_tip: "Il boost EQ massimo consentito per le basse frequenze sui diffusori principali.",
+                mains_max_high_boost_label: "Boost Alti Max Diffusori (+dB) ",
+                mains_max_high_boost_tip: "Il boost EQ massimo consentito per le alte frequenze sui diffusori principali.",
+                sub_target_anchor_label: "Percentile Ancoraggio Target Sub ",
+                sub_target_anchor_tip: "Regola l'ancoraggio del target di volume relativo per la generazione dell'EQ del subwoofer.",
+                global_eq_smoothing_label: "Smussamento EQ Globale ",
+                global_eq_smoothing_tip: "L'algoritmo di smussamento applicato esclusivamente al passaggio dell'EQ di sistema globale.",
+                vol_match_range_label: "Intervallo Corrispondenza Volume (Basso Hz - Alto Hz) ",
+                vol_match_range_tip: "L'intervallo di frequenze valutato per calcolare e far corrispondere i volumi dei diffusori.",
+                manual_rolloff_header: "Override Rolloff Manuali (0 = Auto-Detect)",
+                mains_low_rolloff_label: "Rolloff Basso Diffusori (Hz) ",
+                mains_low_rolloff_tip: "Imposta manualmente i limiti di bassa frequenza dei diffusori principali.",
+                mains_high_rolloff_label: "Rolloff Alto Diffusori (Hz) ",
+                mains_high_rolloff_tip: "Imposta manualmente i limiti di alta frequenza dei diffusori principali.",
+                sub_low_rolloff_label: "Rolloff Basso Sub (Hz) ",
+                sub_low_rolloff_tip: "Imposta manualmente i limiti di bassa frequenza del subwoofer.",
+                sub_high_rolloff_label: "Rolloff Alto Sub (Hz) ",
+                sub_high_rolloff_tip: "Imposta manualmente i limiti di alta frequenza del subwoofer.",
+                generate_base_firs_btn: "▶ 1. Genera FIR Base",
+                phase_2_header: "Fase 2: Allineamento Finale ed EQ Globale",
+                phase_2_descr: "Imposta la distanza del subwoofer in millisecondi o lascia che lo script allinei automaticamente il subwoofer per te.",
+                auto_sub_align_label: "Automatizza Allineamento Subwoofer (Corrispondenza Ritardo di Gruppo Diffusori)",
+                manual_sub_delay_label: "Ritardo Manuale Subwoofer applicato in REW (ms) ",
+                manual_sub_delay_tip: "Un offset temporale manuale applicato esclusivamente all'allineamento del ritardo del subwoofer.",
+                auto_rew_import_label: "Auto-Elaborazione Fase 2 in REW (Importa, Moltiplica, Media)",
+                global_id_label: "ID Misurazione Globale REW (Lascia vuoto se Auto-Elaborazione) ",
+                global_id_tip: "L'ID di una misurazione combinata del sistema per generare il livello finale dell'EQ Globale.",
+                enable_global_eq_label: "Abilita Generazione EQ Globale ",
+                enable_global_eq_tip: "Genera un filtro EQ finale complessivo sopra le correzioni dei singoli diffusori per corrispondere perfettamente alla tua curva house target.",
+                apply_freq_limits_label: "Applica Limiti Frequenza EQ a EQ Globale ",
+                apply_freq_limits_tip: "Applica le tue frequenze di cutoff 'Nessuna Correzione Sopra/Sotto' al livello dell'EQ Globale, forzando l'EQ complessiva all'unità al di fuori di quelle bande.",
+                auto_target_curve_label: "Curva Auto-Target (Preserva il Carattere dei Diffusori) ",
+                auto_target_curve_tip: "Traccia e si fonde dinamicamente nel roll-off naturale ad alta frequenza dei tuoi specifici diffusori per preservare il loro carattere timbrico innato all'estremità superiore.",
+                auto_target_start_label: "Inizio Auto-Target (Hz) ",
+                auto_target_start_tip: "La frequenza dove inizia la valutazione dinamica della curva target automatica che traccia il diffusore.",
+                bake_final_firs_btn: "▶ 2. Applica FIR Finali & EQ Global",
+                console_ready: "Pronto...",
+                wizard_title: "Configurazione Misurazione Automatica",
+                wizard_desc: "Questa procedura guidata ti aiuterà a prendere misurazioni REW in più posizioni e le allineerà automaticamente per la media spaziale.",
+                wiz_important: "Importante:",
+                wiz_license_note: "Poiché REW richiede una \"Licenza Pro\" per automatizzare gli sweep tramite la sua API, questa procedura guidata è progettata per funzionare manualmente con la versione gratuita di REW.",
+                wiz_step1_1: "1. Apri REW, vai nelle preferenze e avvia il Server API.",
+                wiz_step1_2: "2. Apri la finestra Misura (Measure).",
+                wiz_step1_3: "3. Imposta l'intervallo da 0 a 24000 Hz.",
+                wiz_step1_4: "4. Imposta il livello a -12.0 dBFS.",
+                wiz_step1_5: "5. Imposta il Timing su Acoustic Timing Reference. (Usa C se hai un canale centrale, altrimenti usa L).",
+                wiz_speakers_label: "Diffusori che misurerai",
+                wiz_ch_l: "Sinistro (L)",
+                wiz_ch_r: "Destro (R)",
+                wiz_ch_c: "Centrale (C)",
+                wiz_ch_lfe: "Subwoofer (LFE)",
+                wiz_ch_sl: "Surround S (SL)",
+                wiz_ch_sr: "Surround D (SR)",
+                wiz_ch_bl: "Posteriore S (BL)",
+                wiz_ch_br: "Posteriore D (BR)",
+                wiz_pos_header: "Posizione 1",
+                wiz_pos_mlp: "Posiziona il microfono esattamente nella tua posizione di ascolto principale (MLP). Questo sarà l'ancora temporale.",
+                wiz_btn_cancel: "Annulla",
+                wiz_btn_skip: "Salta / Termina",
+                wiz_btn_next: "Avanti ➔",
+                wiz_pos_label: "Posizione",
+                wiz_pos_move: "Sposta il microfono nella posizione {pos}.",
+                wiz_pos_complete: "Posizione {pos} Completata!",
+                wiz_measure_label: "Misura:",
+                wiz_wait_meas_rew: "In attesa della misurazione di {ch} in REW...",
+                wiz_finish_btn: "Termina",
+                wiz_next_pos_btn: "Prossima Posizione ➔",
+                wiz_step2_instr: "In REW, seleziona il canale di uscita corretto per questo diffusore e clicca su <strong>Start Measuring</strong>.",
+                wiz_step3_title: "Allineamento e Media",
+                wiz_step3_p1: "Cross-correlazione delle misurazioni fuori asse rispetto all'MLP e calcolo delle medie spaziali...",
+                wiz_step3_p2: "Questo potrebbe richiedere un minuto a seconda del numero di posizioni.",
+                wiz_step4_title: "🎉 Configurazione Completata",
+                wiz_step4_p1: "Le medie spaziali sono state calcolate e inviate a REW.",
+                wiz_step4_p2: "Il sistema ha popolato automaticamente la tua configurazione con i nuovi ID misurazione.",
+                wiz_step4_p3: "Ora puoi rivedere le impostazioni DSP avanzate o procedere direttamente alla Fase 1.",
+                wiz_alert_no_meas: "Non hai ancora completato alcuna misurazione.",
+                wiz_confirm_few_meas: "Hai misurato meno di 3 posizioni. La media spaziale sarà meno accurata. Sei sicuro di voler terminare?",
+                floating_reset: "Ripristina Predefiniti"
+            },
+            de: {
+                app_title: "XPDRC 1.0 Web DSP",
+                main_title: "XPDRC - FIR-Designer für Raumkorrektur",
+                run_wizard: "✨ Setup-Assistent starten",
+                import_config: "📂 Konfig importieren",
+                export_config: "💾 Konfig exportieren",
+                documentation: "📖 Dokumentation",
+                docs_link: "Dokumentation",
+                github_link: "GitHub",
+                configuration_header: "Konfiguration",
+                system_ids_header: "System-IDs & Trennfrequenz",
+                mains_ids_label: "Hauptlautsprecher REW-IDs (kommagetrennt, z.B. 1,2) ",
+                mains_ids_tip: "Kommagetrennte Mess-IDs in REW, die Ihren Hauptlautsprechern entsprechen.",
+                sub_id_label: "Subwoofer REW-ID ",
+                sub_id_tip: "Die Mess-ID in REW, die Ihrem Subwoofer entspricht.",
+                crossover_freq_label: "Trennfrequenz (Hz) ",
+                crossover_freq_tip: "Die Frequenz, bei der der Bass von den Hauptlautsprechern zum Subwoofer übergeht.",
+                target_delay_label: "Ziel-Basisverzögerung (ms) ",
+                target_delay_tip: "Hinzugefügte Basisverzögerung zur Verankerung der Filtergenerierung. Verwenden Sie 75ms+ für die beste Tiefbasskorrektur (Filme/Musik). Halten Sie sie für niedrige Latenz unter 50ms (Gaming/Desktop).",
+                mains_xo_type_label: "Hauptlautsprecher Crossover-Typ ",
+                mains_xo_type_tip: "Die Filtertopologie und Steilheit, die auf die Hochpassseite der Hauptlautsprecher angewendet wird.",
+                sub_xo_type_label: "Subwoofer Crossover-Typ ",
+                sub_xo_type_tip: "Die Filtertopologie und Steilheit, die auf die Tiefpassseite des Subwoofers angewendet wird.",
+                mains_xo_phase_label: "Hauptlautsprecher Crossover-Phase ",
+                mains_xo_phase_tip: "Bestimmt, ob die Frequenzweiche der Hauptlautsprecher eine Phasenverschiebung (Minimum) einführt oder perfekt phasenausgerichtet bleibt (Linear).",
+                sub_xo_phase_label: "Subwoofer Crossover-Phase ",
+                sub_xo_phase_tip: "Bestimmt, ob die Subwoofer-Frequenzweiche eine Phasenverschiebung (Minimum) einführt oder perfekt phasenausgerichtet bleibt (Linear).",
+                house_curve_header: "Hauskurve",
+                bass_boost_label: "Bass-Boost (+dB) ",
+                bass_boost_tip: "Die maximale Dezibel-Erhöhung, die auf den unteren Bereich Ihrer Ziel-Hauskurve angewendet wird.",
+                slope_start_label: "Flankenbeginn (Hz) ",
+                slope_start_tip: "Die Frequenz, bei der die Bass-Boost-Flanke ansteigt.",
+                slope_end_label: "Flankenende (Hz) ",
+                slope_end_tip: "Die Frequenz, bei der die Bass-Boost-Flanke ihren maximalen Pegel erreicht.",
+                custom_house_curve_label: "Benutzerdefinierte Hauskurve (.txt optional) ",
+                custom_house_curve_tip: "Laden Sie eine Textdatei hoch, die eine benutzerdefinierte Frequenz- und Amplituden-Zielkurve definiert.",
+                clear_file_title: "Datei löschen",
+                no_custom_curve: "Keine benutzerdefinierte Kurve geladen. Es werden die obigen Parameter verwendet.",
+                acoustic_delays_header: "Akustische Verzögerungen (ms)",
+                auto_align_label: "Automatische Zeitkorrektur (aus REW IR-Peakzeiten)",
+                manual_delay_hint: "Geben Sie die Rohverzögerung für jede Lautsprecher-ID ein. Verwenden Sie 0.0 als Zeitreferenz.",
+                auto_delay_hint: "Verzögerungen werden automatisch aus den IR-Messspitzen der REW-Messung erkannt.",
+                enter_ids_hint: "Geben Sie oben Hauptlautsprecher- oder Subwoofer-IDs ein, um Verzögerungseingaben zu generieren.",
+                vba_header: "Virtual Bass Array (Nur Subwoofer)",
+                enable_vba_label: "VBA aktivieren ",
+                enable_vba_tip: "Aktiviert ein Virtual Bass Array, um spezifische Raummoden-Reflektionen aktiv auszulöschen.",
+                vba_modes_label: "Manuelle Moden (Hz, kommagetrennt. Leer lassen für Auto-Erkennung) ",
+                vba_modes_tip: "Kommagetrennte Liste der auszulöschenden Raummoden-Frequenzen; für automatische Erkennung leer lassen.",
+                vba_attn_label: "Reflektionsdämpfung pro Durchgang (-dB) ",
+                vba_attn_tip: "Der erwartete Dämpfungspegel (Lautstärkeabfall) jeder aufeinanderfolgenden Raumreflektion.",
+                vba_taps_label: "Taps (auszulöschende Reflexionen) ",
+                vba_taps_tip: "Die Anzahl der aufeinanderfolgenden Raumreflektionen, die das VBA auszulöschen versuchen soll.",
+                processing_features_header: "Verarbeitungsfunktionen",
+                mains_sub_header: "Hauptlautsprecher",
+                subwoofer_sub_header: "Subwoofer",
+                magnitude_eq_label: "Betrags-EQ ",
+                magnitude_eq_tip: "Glättet die Amplitudenantwort der Hauptlautsprecher.",
+                phase_lin_label: "Phasenlinearisierung",
+                vol_align_label: "Lautstärkeabgleich ",
+                vol_align_tip: "Passt die Gesamtlautstärke der Lautsprecher automatisch aneinander an.",
+                no_correction_above_label: "Keine Korrektur oberhalb von",
+                magnitude_eq_house_label: "Betrags-EQ (Hauskurve)",
+                group_delay_eq_label: "Gruppenlaufzeit-EQ ",
+                group_delay_eq_tip: "Equalisiert die Gruppenlaufzeit des Subwoofers, um zeitliches Verschmieren zu minimieren.",
+                no_correction_below_label: "Keine Korrektur unterhalb von",
+                low_cutoff_label: "Unterer Cutoff (Hz) ",
+                low_cutoff_tip: "Die Grenzfrequenz für tieffrequente EQ-Korrekturen.",
+                high_cutoff_label: "Oberer Cutoff (Hz) ",
+                high_cutoff_tip: "Die Grenzfrequenz für hochfrequente EQ-Korrekturen.",
+                phase_inv_header: "Phase & Inversion",
+                preringing_reduction_label: "Pre-Ringing-Reduktion (PRC)",
+                prc_transition_label: "PRC-Übergang (Hz) ",
+                prc_transition_tip: "Die Frequenz, bei der der Algorithmus zur Pre-Ringing-Reduktion wirksam wird.",
+                mixed_phase_label: "Mixed-Phase-Filterdesign ",
+                mixed_phase_tip: "Empfehlung: AUS lassen. Wenn AUS, erzeugt XPDRC dennoch perfekten Minimalphasen-Betrags-EQ und lineare Phasenkorrekturen ohne Pre-Ringing, was zu einer besseren Gesamtkorrektur mit weniger Artefakten führt.",
+                mixed_phase_xo_label: "Mixed-Phase-Crossover (Hz) ",
+                mixed_phase_xo_tip: "Der Übergangspunkt, an dem der Filter von Minimalphase auf Linearphase umschaltet.",
+                regularized_inv_label: "Regularisierte Inversion (Kirkeby) ",
+                regularized_inv_tip: "Verwendet Kirkeby-Regularisierung während der Inversion, um die Anhebung in tiefen Einbrüchen intelligent zu begrenzen, was zu sichereren Filtern mit besserem Einschwingverhalten führt. Standardmäßig AUS, da Korrekturen mit Hard-Clipping die Lautsprecher aggressiver korrigieren und konsistentere Ergebnisse liefern.",
+                regularization_beta_label: "Regularisierung (β dB) ",
+                regularization_beta_tip: "Die Stärke der angewandten Regularisierung; höhere Werte führen zu sanfteren, sichereren EQ-Korrekturen.",
+                advanced_dsp_header: "⚙️ Erweiterte DSP-Einstellungen",
+                sample_rate_label: "Abtastrate (Hz) ",
+                sample_rate_tip: "Die Abtastrate der generierten FIR-Filter.",
+                filter_taps_label: "Filter-Taps ",
+                filter_taps_tip: "Die Auflösungslängen der generierten FIR-Filter; höhere Werte bieten mehr Präzision im Bassbereich.",
+                rew_api_url_label: "REW API URL ",
+                rew_api_url_tip: "Die Netzwerkadresse für die aktive Room EQ Wizard API Server-Instanz.",
+                mains_fdw_label: "Hauptlautsprecher FDW-Zyklen ",
+                mains_fdw_tip: "Die frequenzabhängige Fenstergröße, die zum Glätten der Hauptlautsprechermessungen verwendet wird.",
+                eq_trans_start_label: "EQ-Übergangsband (Beginn Hz) ",
+                eq_trans_start_tip: "Die untere Frequenz des Übergangsfensters zum Blenden des geglätteten EQ.",
+                eq_trans_end_label: "EQ-Übergangsband (Ende Hz) ",
+                eq_trans_end_tip: "Die obere Frequenz des Übergangsfensters zum Blenden des geglätteten EQ.",
+                mains_max_low_boost_label: "Max. Bassanhebung Hauptlautsprecher (+dB) ",
+                mains_max_low_boost_tip: "Die maximal zulässige EQ-Anhebung für tiefe Frequenzen bei den Hauptlautsprechern.",
+                mains_max_high_boost_label: "Max. Höhenanhebung Hauptlautsprecher (+dB) ",
+                mains_max_high_boost_tip: "Die maximal zulässige EQ-Anhebung für hohe Frequenzen bei den Hauptlautsprechern.",
+                sub_target_anchor_label: "Sub-Ziel-Ankerperzentil ",
+                sub_target_anchor_tip: "Passt den relativen Lautstärkezielanker für die Subwoofer-EQ-Generierung an.",
+                global_eq_smoothing_label: "Globales EQ-Smoothing ",
+                global_eq_smoothing_tip: "Der Glättungsalgorithmus, der ausschließlich auf den globalen System-EQ-Prüflauf angewendet wird.",
+                vol_match_range_label: "Lautstärkeabgleich-Bereich (Tief Hz - Hoch Hz) ",
+                vol_match_range_tip: "Der Frequenzbereich, der zum Berechnen und Abgleichen der Lautstärken ausgewertet wird.",
+                manual_rolloff_header: "Manuelle Rolloff-Overrides (0 = Auto-Erkennung)",
+                mains_low_rolloff_label: "Unterer Rolloff Hauptlautsprecher (Hz) ",
+                mains_low_rolloff_tip: "Legt manuell die unteren Frequenzgrenzen der Hauptlautsprecher fest.",
+                mains_high_rolloff_label: "Oberer Rolloff Hauptlautsprecher (Hz) ",
+                mains_high_rolloff_tip: "Legt manuell die oberen Frequenzgrenzen der Hauptlautsprecher fest.",
+                sub_low_rolloff_label: "Unterer Rolloff Subwoofer (Hz) ",
+                sub_low_rolloff_tip: "Legt manuell die unteren Frequenzgrenzen des Subwoofers fest.",
+                sub_high_rolloff_label: "Oberer Rolloff Subwoofer (Hz) ",
+                sub_high_rolloff_tip: "Legt manuell die oberen Frequenzgrenzen des Subwoofers fest.",
+                generate_base_firs_btn: "▶ 1. Basis-FIRs generieren",
+                phase_2_header: "Phase 2: Endgültige Ausrichtung & Global-EQ",
+                phase_2_descr: "Stellen Sie Ihren Subwoofer-Abstand in Millisekunden ein oder lassen Sie das Skript den Subwoofer automatisch für Sie ausrichten.",
+                auto_sub_align_label: "Subwoofer-Ausrichtung automatisieren (Gruppenlaufzeit an Mauptlautsprecher anpassen)",
+                manual_sub_delay_label: "Manuelle Subwoofer-Verzögerung in REW (ms) ",
+                manual_sub_delay_tip: "Ein manueller Zeitversatz, der ausschließlich auf die Verzögerungsausrichtung des Subwoofers angewendet wird.",
+                auto_rew_import_label: "Phase 2 in REW automatisch verarbeiten (Import, Multiplizieren, Mitteln)",
+                global_id_label: "Globale Mess-ID REW (Leer lassen bei automatischer Verarbeitung) ",
+                global_id_tip: "Die ID einer kombinierten Systemmessung zur Erstellung der finalen Global-EQ-Ebene.",
+                enable_global_eq_label: "Generierung von Global-EQ aktivieren ",
+                enable_global_eq_tip: "Erzeugt einen finalen, übergreifenden EQ-Filter zusätzlich zu den einzelnen Lautsprecherkorrekturen, um Ihre Zielkurve perfekt zu treffen.",
+                apply_freq_limits_label: "EQ-Frequenzgrenzen auf Global-EQ anwenden ",
+                apply_freq_limits_tip: "Wendet Ihre 'Keine Korrektur ober- /unterhalb'-Grenzfrequenzen auf die Global-EQ-Ebene an und erzwingt außerhalb dieser Bänder den Gesamtfaktor 1.",
+                auto_target_curve_label: "Auto-Zielkurve (Lautsprechercharakter erhalten) ",
+                auto_target_curve_tip: "Verfolgt dynamisch den natürlichen Hochfrequenzabfall Ihrer spezifischen Lautsprecher und blendet darin ein, um deren angeborenen Klangcharakter im oberen Bereich zu erhalten.",
+                auto_target_start_label: "Auto-Zielkurve Beginn (Hz) ",
+                auto_target_start_tip: "Die Frequenz, bei der die dynamische automatische Zielkurvenerkennung beginnt, den Lautsprecher zu verfolgen.",
+                bake_final_firs_btn: "▶ 2. Finale FIRs & Global-EQ erstellen",
+                console_ready: "Bereit...",
+                wizard_title: "Automatisierte Messeinrichtung",
+                wizard_desc: "Dieser Assistent führt Sie durch REW-Messungen an mehreren Positionen und richtet sie automatisch für eine räumliche Mittelung aus.",
+                wiz_important: "Wichtig:",
+                wiz_license_note: "Da REW eine \"Pro-Lizenz\" zur Automatisierung von Sweeps über seine API benötigt, ist dieser Assistent für die manuelle Arbeit mit der kostenlosen Version von REW konzipiert.",
+                wiz_step1_1: "1. Öffnen Sie REW, gehen Sie in die Einstellungen und starten Sie den API-Server.",
+                wiz_step1_2: "2. Öffnen Sie den Messen-Dialog (Measure).",
+                wiz_step1_3: "3. Bereich auf 0 bis 24000 Hz einstellen.",
+                wiz_step1_4: "4. Pegel auf -12.0 dBFS einstellen.",
+                wiz_step1_5: "5. Set Timing auf Acoustic Timing Reference einstellen. (Verwenden Sie C, falls Sie einen Center-Kanal haben, ansonsten L).",
+                wiz_speakers_label: "Lautsprecher, die Sie messen werden",
+                wiz_ch_l: "Links (L)",
+                wiz_ch_r: "Rechts (R)",
+                wiz_ch_c: "Center (C)",
+                wiz_ch_lfe: "Subwoofer (LFE)",
+                wiz_ch_sl: "Surround L (SL)",
+                wiz_ch_sr: "Surround R (SR)",
+                wiz_ch_bl: "Hinten L (BL)",
+                wiz_ch_br: "Hinten R (BR)",
+                wiz_pos_header: "Position 1",
+                wiz_pos_mlp: "Platzieren Sie das Mikrofon genau an Ihrer Haupthörposition (MLP). Dies wird der Zeitanker sein.",
+                wiz_btn_cancel: "Abbrechen",
+                wiz_btn_skip: "Überspringen / Beenden",
+                wiz_btn_next: "Weiter ➔",
+                wiz_pos_label: "Position",
+                wiz_pos_move: "Bewegen Sie das Mikrofon auf Position {pos}.",
+                wiz_pos_complete: "Position {pos} abgeschlossen!",
+                wiz_measure_label: "Messen:",
+                wiz_wait_meas_rew: "Warten auf Messung von {ch} in REW...",
+                wiz_finish_btn: "Beenden",
+                wiz_next_pos_btn: "Nächste Position ➔",
+                wiz_step2_instr: "Wählen Sie in REW den richtigen Ausgangskanal für diesen Lautsprecher und klicken Sie auf <strong>Start Measuring</strong>.",
+                wiz_step3_title: "Ausrichtung & Mittelung",
+                wiz_step3_p1: "Kreuzkorrelation der Off-Center-Messungen zum MLP und Berechnung der räumlichen Mittelwerte...",
+                wiz_step3_p2: "Dies kann je nach Anzahl der Positionen eine Minute dauern.",
+                wiz_step4_title: "🎉 Setup abgeschlossen",
+                wiz_step4_p1: "Die räumlichen Mittelwerte wurden berechnet und an REW gesendet.",
+                wiz_step4_p2: "Das System hat Ihre Konfiguration automatisch mit den neuen Mess-IDs ausgefüllt.",
+                wiz_step4_p3: "Sie können nun die erweiterten DSP-Einstellungen überprüfen oder direkt mit Phase 1 fortfahren.",
+                wiz_alert_no_meas: "Sie haben noch keine Messungen abgeschlossen.",
+                wiz_confirm_few_meas: "Sie haben weniger als 3 Positionen gemessen. Der räumliche Mittelwert wird weniger genau sein. Sind Sie sicher, dass Sie fortfahren wollen?",
+                floating_reset: "Standardwerte wiederherstellen"
+            },
+            fr: {
+                app_title: "XPDRC 1.0 Web DSP",
+                main_title: "XPDRC - Concepteur FIR de Correction Acoustique",
+                run_wizard: "✨ Lancer l'Assistant de Configuration",
+                import_config: "📂 Importer Config",
+                export_config: "💾 Exporter Config",
+                documentation: "📖 Documentation",
+                docs_link: "Documentation",
+                github_link: "GitHub",
+                configuration_header: "Configuration",
+                system_ids_header: "IDs Système & Crossover",
+                mains_ids_label: "IDs REW Enceintes (séparés par virgule, ex: 1,2) ",
+                mains_ids_tip: "IDs des mesures dans REW correspondant à vos enceintes principales, séparés par des virgules.",
+                sub_id_label: "ID REW Caisson de Basses ",
+                sub_id_tip: "L'ID de la mesure dans REW correspondant à votre caisson de basses.",
+                crossover_freq_label: "Fréquence de Crossover (Hz) ",
+                crossover_freq_tip: "La fréquence à laquelle les basses passent des enceintes principales au caisson.",
+                target_delay_label: "Délai de Base Cible (ms) ",
+                target_delay_tip: "Délai de base ajouté pour ancrer la génération du filtre. Utilisez 75ms+ pour la meilleure correction des basses profondes (films/musique). Gardez moins de 50ms pour une faible latence (gaming/bureau).",
+                mains_xo_type_label: "Type Crossover Enceintes ",
+                mains_xo_type_tip: "La topologie et la pente du filtre appliquées au côté passe-haut des enceintes.",
+                sub_xo_type_label: "Type Crossover Caisson ",
+                sub_xo_type_tip: "La topologie et la pente du filtre appliquées au côté passe-bas du caisson.",
+                mains_xo_phase_label: "Phase Crossover Enceintes ",
+                mains_xo_phase_tip: "Détermine si le crossover des enceintes introduit un déphasage (minimum) ou reste parfaitement aligné en phase (linéaire).",
+                sub_xo_phase_label: "Phase Crossover Caisson ",
+                sub_xo_phase_tip: "Détermine si le crossover du caisson introduit un déphasage (minimum) ou reste parfaitement aligné en phase (linéaire).",
+                house_curve_header: "Courbe House",
+                bass_boost_label: "Boost Basses (+dB) ",
+                bass_boost_tip: "L'augmentation maximale en décibels appliquée aux fréquences les plus basses de votre courbe cible.",
+                slope_start_label: "Début de la Pente (Hz) ",
+                slope_start_tip: "La fréquence où la pente de l'augmentation des basses commence à monter.",
+                slope_end_label: "Fin de la Pente (Hz) ",
+                slope_end_tip: "La fréquence où la pente de l'augmentation des basses atteint son niveau maximum.",
+                custom_house_curve_label: "Courbe House Personnalisée (.txt optionnel) ",
+                custom_house_curve_tip: "Téléchargez un fichier texte définissant une courbe cible personnalisée en fréquence et amplitude.",
+                clear_file_title: "Effacer le Fichier",
+                no_custom_curve: "Pas de courbe personnalisée chargée. Utilisation des paramètres ci-dessus.",
+                acoustic_delays_header: "Délais Acoustiques (ms)",
+                auto_align_label: "Auto-Alignement Temporel (via pics IR REW)",
+                manual_delay_hint: "Entrez le délai brut pour chaque ID d'enceinte. Utilisez 0.0 pour votre référence temporelle.",
+                auto_delay_hint: "Les délais seront auto-détectés à partir des pics IR des mesures REW.",
+                enter_ids_hint: "Entrez les IDs des Enceintes ou du Caisson ci-dessus pour générer les entrées de délai.",
+                vba_header: "Virtual Bass Array (Caisson Uniquement)",
+                enable_vba_label: "Activer VBA ",
+                enable_vba_tip: "Active un Virtual Bass Array pour annuler activement les réflexions spécifiques des modes de pièce.",
+                vba_modes_label: "Modes Manuels (Hz, avec virgules. Laisser vide pour Auto-Detect) ",
+                vba_modes_tip: "Liste des fréquences des modes de pièce à annuler ; laisser vide pour une détection automatique.",
+                vba_attn_label: "Atténuation des Réflexions par rebond (-dB) ",
+                vba_attn_tip: "Le niveau d'atténuation attendu (baisse de volume) de chaque réflexion successive de la pièce.",
+                vba_taps_label: "Taps (rebonds à annuler) ",
+                vba_taps_tip: "Le nombre de réflexions de pièce successives que le VBA doit tenter d'annuler.",
+                processing_features_header: "Fonctionnalités de Traitement",
+                mains_sub_header: "Enceintes Principales",
+                subwoofer_sub_header: "Caisson de Basses",
+                magnitude_eq_label: "EQ Magnitude ",
+                magnitude_eq_tip: "Aplatit l'amplitude de la réponse en fréquence des enceintes principales.",
+                phase_lin_label: "Linéarisation de Phase",
+                vol_align_label: "Alignement du Volume ",
+                vol_align_tip: "Ajuste automatiquement le volume global des enceintes pour les faire correspondre.",
+                no_correction_above_label: "Pas de Correction Au-dessus",
+                magnitude_eq_house_label: "EQ Magnitude (Courbe House)",
+                group_delay_eq_label: "EQ Délai de Groupe ",
+                group_delay_eq_tip: "Égalise le délai de groupe du caisson pour minimiser le flou temporel.",
+                no_correction_below_label: "Pas de Correction En-dessous",
+                low_cutoff_label: "Coupure Basse (Hz) ",
+                low_cutoff_tip: "La fréquence limite pour les corrections EQ basse fréquence.",
+                high_cutoff_label: "Coupure Haute (Hz) ",
+                high_cutoff_tip: "La fréquence limite pour les corrections EQ haute fréquence.",
+                phase_inv_header: "Phase & Inversion",
+                preringing_reduction_label: "Réduction de Pré-écho (PRC)",
+                prc_transition_label: "Transition PRC (Hz) ",
+                prc_transition_tip: "La fréquence à laquelle l'algorithme de réduction de pré-écho prend effet.",
+                mixed_phase_label: "Conception de Filtre à Phase Mixte ",
+                mixed_phase_tip: "Recommandé de laisser DESACTIVÉ. Lorsqu'il est DESACTIVÉ, XPDRC génère toujours un EQ de magnitude à phase minimale et des corrections de phase linéaire parfaites sans pré-écho, pour une meilleure correction globale avec moins d'artéfacts.",
+                mixed_phase_xo_label: "Crossover Phase Mixte (Hz) ",
+                mixed_phase_xo_tip: "Le point de transition où le filtre passe de la phase minimale à la phase linéaire.",
+                regularized_inv_label: "Inversion Régularisée (Kirkeby) ",
+                regularized_inv_tip: "Utilise la régularisation de Kirkeby pendant l'inversion pour limiter intelligemment les boosts dans les creux profonds, créant des filtres plus sûrs avec une meilleure réponse transitoire. Désactivé par défaut car la correction limitée par clipping corrige plus agressivement et donne des résultats plus constants.",
+                regularization_beta_label: "Régularisation (β dB) ",
+                regularization_beta_tip: "La force de la régularisation appliquée ; des valeurs plus élevées donnent des corrections EQ plus douces et sûres.",
+                advanced_dsp_header: "⚙️ Paramètres DSP Avancés",
+                sample_rate_label: "Taux d'Échantillonnage (Hz) ",
+                sample_rate_tip: "La fréquence d'échantillonnage des filtri FIR générés.",
+                filter_taps_label: "Taps du Filtre ",
+                filter_taps_tip: "Les longueurs de résolution des filtres FIR générés ; des valeurs plus élevées offrent plus de précision dans les basses.",
+                rew_api_url_label: "URL API REW ",
+                rew_api_url_tip: "L'adresse réseau de l'instance du serveur API Room EQ Wizard active.",
+                mains_fdw_label: "Cycles FDW Enceintes ",
+                mains_fdw_tip: "La taille de la fenêtre dépendante de la fréquence utilisée pour lisser les mesures des enceintes principales.",
+                eq_trans_start_label: "Bande Transition EQ (Début Hz) ",
+                eq_trans_start_tip: "La fréquence basse définissant la fenêtre de transition pour mélanger l'EQ lissée.",
+                eq_trans_end_label: "Bande Transition EQ (Fin Hz) ",
+                eq_trans_end_tip: "La fréquence haute définissant la fenêtre de transition pour mélanger l'EQ lissée.",
+                mains_max_low_boost_label: "Boost Bas Max Enceintes (+dB) ",
+                mains_max_low_boost_tip: "Le boost EQ maximal autorisé pour les basses fréquences sur les enceintes principales.",
+                mains_max_high_boost_label: "Boost Haut Max Enceintes (+dB) ",
+                mains_max_high_boost_tip: "Le boost EQ maximal autorisé pour les hautes fréquences sur les enceintes principales.",
+                sub_target_anchor_label: "Percentile Ancrage Cible Caisson ",
+                sub_target_anchor_tip: "Ajuste l'ancre de volume cible relative pour la génération de l'EQ du caisson.",
+                global_eq_smoothing_label: "Lissage EQ Global ",
+                global_eq_smoothing_tip: "L'algorithme de lissage appliqué strictement à la passe d'EQ globale du système.",
+                vol_match_range_label: "Plage Correspondance Volume (Bas Hz - Haut Hz) ",
+                vol_match_range_tip: "La plage de fréquences évaluée pour calculer et faire correspondre les volumes des enceintes.",
+                manual_rolloff_header: "Overrides de Rolloff Manuels (0 = Auto-Detect)",
+                mains_low_rolloff_label: "Rolloff Bas Enceintes (Hz) ",
+                mains_low_rolloff_tip: "Définit manuellement les limites basse fréquence des enceintes principales.",
+                mains_high_rolloff_label: "Rolloff Haut Enceintes (Hz) ",
+                mains_high_rolloff_tip: "Définit manuellement les limites haute fréquence des enceintes principales.",
+                sub_low_rolloff_label: "Rolloff Bas Caisson (Hz) ",
+                sub_low_rolloff_tip: "Définit manuellement les limites basse fréquence du caisson de basses.",
+                sub_high_rolloff_label: "Rolloff Haut Caisson (Hz) ",
+                sub_high_rolloff_tip: "Définit manuellement les limites haute fréquence du caisson de basses.",
+                generate_base_firs_btn: "▶ 1. Générer FIRs de Base",
+                phase_2_header: "Phase 2: Alignement Final & EQ Global",
+                phase_2_descr: "Réglez la distance de votre caisson ou laissez le script aligner automatiquement le caisson pour vous.",
+                auto_sub_align_label: "Automatiser l'Alignement du Caisson (Match Mains Group Delay)",
+                manual_sub_delay_label: "Délai Manuel Caisson appliqué dans REW (ms) ",
+                manual_sub_delay_tip: "Un décalage temporel manuel appliqué strictement à l'alignement du délai du caisson.",
+                auto_rew_import_label: "Auto-Traitement Phase 2 dans REW (Import, Multiplier, Moyenne)",
+                global_id_label: "ID REW Mesure Globale (Laisser vide si Auto-Traitement) ",
+                global_id_tip: "L'ID d'une mesure de système combinée pour générer la couche finale d'EQ globale.",
+                enable_global_eq_label: "Activer Génération EQ Globale ",
+                enable_global_eq_tip: "Génère un filtre EQ global final par-dessus les corrections individuelles pour correspondre parfaitement à votre courbe cible.",
+                apply_freq_limits_label: "Appliquer Limites Fréquence EQ à EQ Global ",
+                apply_freq_limits_tip: "Applique vos fréquences de coupure 'Pas de Correction Au-dessus/En-dessous' à la couche d'EQ globale, forçant l'EQ global à l'unité en dehors de ces bandes.",
+                auto_target_curve_label: "Courbe Auto-Cible (Préserver le Caractère des Enceintes) ",
+                auto_target_curve_tip: "Suit dynamiquement le rolloff haute fréquence naturel de vos enceintes pour préserver leur caractère timbral inné.",
+                auto_target_start_label: "Début Auto-Cible (Hz) ",
+                auto_target_start_tip: "La fréquence où commence l'évaluation dynamique de la courbe cible automatique.",
+                bake_final_firs_btn: "▶ 2. Appliquer FIRs Finaux & EQ Global",
+                console_ready: "Prêt...",
+                wizard_title: "Assistant de Mesure Automatisé",
+                wizard_desc: "Cet assistant vous guidera pour prendre des mesures REW multi-positions et les alignera automatiquement pour une moyenne spatiale.",
+                wiz_important: "Important :",
+                wiz_license_note: "REW nécessitant une une licence Pro pour automatiser les mesures via API, cet assistant est conçu pour fonctionner manuellement avec la version gratuite de REW.",
+                wiz_step1_1: "1. Ouvrez REW, allez dans les préférences et démarrez le serveur API.",
+                wiz_step1_2: "2. Ouvrez la boîte de dialogue Mesurer (Measure).",
+                wiz_step1_3: "3. Réglez la plage sur 0 à 24000 Hz.",
+                wiz_step1_4: "4. Réglez le niveau sur -12.0 dBFS.",
+                wiz_step1_5: "5. Réglez le Timing sur Acoustic Timing Reference. (Utilisez C si vous avez une centrale, sinon L).",
+                wiz_speakers_label: "Enceintes à mesurer",
+                wiz_ch_l: "Gauche (L)",
+                wiz_ch_r: "Droite (R)",
+                wiz_ch_c: "Centrale (C)",
+                wiz_ch_lfe: "Caisson (LFE)",
+                wiz_ch_sl: "Surround G (SL)",
+                wiz_ch_sr: "Surround D (SR)",
+                wiz_ch_bl: "Arrière G (BL)",
+                wiz_ch_br: "Arrière D (BR)",
+                wiz_pos_header: "Position 1",
+                wiz_pos_mlp: "Placez le micro exactement à votre position d'écoute principale (MLP). Ce sera l'ancre temporelle.",
+                wiz_btn_cancel: "Annuler",
+                wiz_btn_skip: "Passer / Terminer",
+                wiz_btn_next: "Suivant ➔",
+                wiz_pos_label: "Position",
+                wiz_pos_move: "Déplacez le micro à la position {pos}.",
+                wiz_pos_complete: "Position {pos} terminée !",
+                wiz_measure_label: "Mesurer :",
+                wiz_wait_meas_rew: "En attente de la mesure de {ch} dans REW...",
+                wiz_finish_btn: "Terminer",
+                wiz_next_pos_btn: "Position Suivante ➔",
+                wiz_step2_instr: "Dans REW, sélectionnez le bon canal de sortie pour cette enceinte et cliquez sur <strong>Start Measuring</strong>.",
+                wiz_step3_title: "Alignement & Moyenne",
+                wiz_step3_p1: "Corrélation croisée des mesures hors axe par rapport au MLP et calcul des moyennes spatiales...",
+                wiz_step3_p2: "Cela peut prendre une minute selon le nombre de positions.",
+                wiz_step4_title: "🎉 Configuration Terminée",
+                wiz_step4_p1: "Les moyennes spatiales ont été calculées et envoyées à REW.",
+                wiz_step4_p2: "Le système a automatiquement peuplé votre configuration avec les nouveaux IDs de mesure.",
+                wiz_step4_p3: "Vous pouvez maintenant réviser les paramètres DSP avancés ou passer directement à la Phase 1.",
+                wiz_alert_no_meas: "Vous n'avez pas encore terminé de mesures.",
+                wiz_confirm_few_meas: "Vous avez mesuré moins de 3 positions. La moyenne spatiale sera moins précise. Êtes-vous sûr de vouloir terminer ?",
+                floating_reset: "Réinitialiser par défaut"
+            }
+        };
+
+        function changeLanguage(lang) {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    const text = translations[lang][key];
+
+                    // Check if it's a special tag that needs preserving (SUMMARY, BUTTON)
+                    // or if it HAS a tooltip child that MUST be preserved.
+                    const tooltip = el.querySelector('.tooltip');
+
+                    if (el.tagName === 'SUMMARY' || el.tagName === 'BUTTON') {
+                        el.innerHTML = text;
+                    } else if (tooltip) {
+                        // Preserve the tooltip element
+                        const tooltipHtml = tooltip.outerHTML;
+                        // Replace the text part. We assume the text is before the tooltip.
+                        // We use a temporary container to safely swap text while keeping the tooltip element.
+                        el.childNodes.forEach(node => {
+                            if (node.nodeType === Node.TEXT_NODE && node.textContent.trim() !== "") {
+                                node.textContent = text + " ";
+                            }
+                        });
+                    } else {
+                        el.innerHTML = text;
+                    }
+                }
+            });
+
+            document.querySelectorAll('[data-i18n-tip]').forEach(el => {
+                const key = el.getAttribute('data-i18n-tip');
+                if (translations[lang] && translations[lang][key]) {
+                    el.textContent = translations[lang][key];
+                }
+            });
+
+            document.querySelectorAll('[data-i18n-title]').forEach(el => {
+                const key = el.getAttribute('data-i18n-title');
+                if (translations[lang] && translations[lang][key]) {
+                    el.setAttribute('title', translations[lang][key]);
+                }
+            });
+
+            // Update placeholders
+            document.querySelectorAll('input[placeholder][data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (translations[lang] && translations[lang][key]) {
+                    el.setAttribute('placeholder', translations[lang][key]);
+                }
+            });
+
+            localStorage.setItem('xpdrc_lang', lang);
+            document.documentElement.lang = lang;
+
+            // Update active state in buttons
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                if (btn.getAttribute('onclick').includes(`'${lang}'`)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Re-run wizard UI update if open
+            if (!document.getElementById('wizard-modal').classList.contains('hidden')) {
+                updatePosUI();
+            }
+        }
+
+        // Initialize language
+        window.addEventListener('load', () => {
+            const savedLang = localStorage.getItem('xpdrc_lang') || 'en';
+            changeLanguage(savedLang);
+        });
+    </script>
 </body>
 
 </html>
