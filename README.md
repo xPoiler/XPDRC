@@ -7,17 +7,29 @@ Welcome to XPDRC, this application is an advanced digital signal processing filt
 The core philosophy of XPDRC is to provide the highest fidelity correction and phase adherence while meticulously avoiding artifact generation such as pre ringing, inversion ringing, or unnatural room field removal.
 
 What XPDRC can do:
+
 -Processing for up to 8 channels in 9 different positions
+
 -Linear phase or minimum phase crossovers of various types and slopes.
+
 -Magnitude correction below schroeder to mitigate room modes across all channels separatedly.
+
 -Subwoofer magnitude eq.
+
 -Quasi-Anechoic magnitude correction for mains above schroeder for tone balancing without dulling the sound.
+
 -Excess phase inversion for the mains with ringing artifacts prevention algorithms. (Phase linearization).
+
 -group delay eq for the sub with iterative ringing analysis to prevent pre and post ringing artifacts.
+
 -Completely automatic Virtual Bass Array generation to minimize room modes (only if lfe channel is present).
+
 -Auto volume matching of all channels.
+
 -Auto or manual Time alignment of all channels.
+
 -Auto or manual alignment of a subwoofer with mains (single subwoofer, for now).
+
 -Filter generation from 4096 taps all the way  to 131072 for maximum precision.
 
 and more...  settings and preferences can be easily changed by the user at all times via the local web interface available at localhost:5000, almost every single variable in the script can be changed from the ui, should the user wants to, we strongly recommend default settings for ease of use and best results in the majority of situations.
@@ -26,14 +38,20 @@ and more...  settings and preferences can be easily changed by the user at all t
 
 Getting XPDRC running is designed to be as simple as possible.
 
-1.  **Install Python**: Ensure you have Python 3.10+ installed on your system.
-2.  **Clone/Download**: Download the source code to your local machine.
-3.  **Run REW**: Ensure Room EQ Wizard (REW) is open and its API server is enabled (default port 4735).
-4.  **Launch**: Double-click the **`Run XPDRC.bat`** file in the project directory.
+**Install Python**: Ensure you have Python 3.10+ installed on your system.
+
+**Clone/Download**: Download the source code to your local machine.
+
+**Run REW**: Ensure Room EQ Wizard (REW) is open and its API server is enabled (default port 4735).
+
+**Launch**: Double-click the **`Run XPDRC.bat`** file in the project directory.
 
 The batch script will automatically:
+
 - Create a virtual environment (`.venv`) to keep your system clean.
+ 
 - Install all necessary dependencies (`numpy`, `scipy`, `flask`, etc.).
+  
 - Start the application and open the interface in your default browser.
 
 ## How to use
@@ -41,15 +59,23 @@ The batch script will automatically:
 Once the application is running, it will automatically open in your browser at `http://127.0.0.1:5000`.
 
 ### Guided Setup
+
 The easiest way to start is by clicking the **"Run Setup Wizard"** button. This wizard will guide you through:
+
 - Taking the required measurements in REW.
+  
 - Automatically identifying speakers and subwoofers.
+  
 - Setting up the basic processing parameters.
 
 ### Manual Configuration
+
 If you prefer manual control, you can:
+
 - Enter REW measurement IDs directly.
+  
 - Adjust crossover frequencies, house curve boosts, and frequency limits.
+  
 - Toggle advanced features like **Mixed Phase Design** or **Kirkeby Regularization**.
 
 Once configured, click **"Generate Base FIR"** (Phase 1) followed by the green generation button in Phase 2. The app will produce `.wav` impulse response files and a global EQ file for your convolver. Apply a global negative gain in your system to prevent clipping.
