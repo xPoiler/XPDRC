@@ -19,7 +19,7 @@ Ce que XPDRC peut faire :
 - Équilibrage automatique du volume de tous les canaux.
 - Alignement temporel automatique ou manuel de tous les canaux.
 - Alignement automatique ou manuel d'un caisson de basses avec les enceintes principales (un seul caisson, pour l'instant).
-- Génération de filtres de 4096 taps jusqu'à 131072 pour une précision maximale.
+- Génération de filtri de 32768 taps jusqu'à 131072 pour une précision maximale.
 
 et plus encore... les réglages et préférences peuvent être facilement modifiés par l'utilisateur à tout moment via l'interface web locale disponible sur localhost:5000 ; presque chaque variable du script peut être modifiée depuis l'interface utilisateur. Pour une facilité d'utilisation et de meilleurs résultats dans la majorité des situations, nous recommandons vivement les réglages par défaut.
 

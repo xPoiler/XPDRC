@@ -30,7 +30,7 @@ What XPDRC can do:
 
 -Auto or manual alignment of a subwoofer with mains (single subwoofer, for now).
 
--Filter generation from 4096 taps all the way  to 131072 for maximum precision.
+-Filter generation from 32768 taps all the way  to 131072 for maximum precision.
 
 and more...  settings and preferences can be easily changed by the user at all times via the local web interface available at localhost:5000, almost every single variable in the script can be changed from the ui, should the user wants to, we strongly recommend default settings for ease of use and best results in the majority of situations.
 
@@ -38,20 +38,17 @@ and more...  settings and preferences can be easily changed by the user at all t
 
 Getting XPDRC running is designed to be as simple as possible.
 
-**Install Python**: Ensure you have Python 3.10+ installed on your system.
-
-**Clone/Download**: Download the source code to your local machine.
-
-**Run REW**: Ensure Room EQ Wizard (REW) is open and its API server is enabled (default port 4735).
-
-**Launch**: Double-click the **`Run XPDRC.bat`** file in the project directory.
+1.  **Install Python**: Ensure you have Python 3.10+ installed on your system.
+2.  **Clone/Download**: Download the source code to your local machine.  
+3.  **Run REW**: Ensure Room EQ Wizard (REW) is open and its API server is enabled (default port 4735).  
+4.  **Launch**: Double-click the **`Run XPDRC.bat`** file in the project directory.
 
 The batch script will automatically:
 
 - Create a virtual environment (`.venv`) to keep your system clean.
  
 - Install all necessary dependencies (`numpy`, `scipy`, `flask`, etc.).
-  
+ 
 - Start the application and open the interface in your default browser.
 
 ## How to use
@@ -65,7 +62,7 @@ The easiest way to start is by clicking the **"Run Setup Wizard"** button. This 
 - Taking the required measurements in REW.
   
 - Automatically identifying speakers and subwoofers.
-  
+ 
 - Setting up the basic processing parameters.
 
 ### Manual Configuration
@@ -76,9 +73,9 @@ If you prefer manual control, you can:
   
 - Adjust crossover frequencies, house curve boosts, and frequency limits.
   
-- Toggle advanced features like **Mixed Phase Design** or **Kirkeby Regularization**.
+- Toggle advanced features and change their operation parameters.
 
-Once configured, click **"Generate Base FIR"** (Phase 1) followed by the green generation button in Phase 2. The app will produce `.wav` impulse response files and a global EQ file for your convolver. Apply a global negative gain in your system to prevent clipping.
+Once configured, click **"Generate Base FIR"** (Phase 1) followed by the green generation button in Phase 2. The app will produce `.wav` impulse response files for each speaker you processed and a global EQ file for your convolver. Apply a global negative gain in your system to prevent clipping.
 
 ## Documentation
 
@@ -86,6 +83,6 @@ For a comprehensive breakdown of exactly how the digital signal processing algor
 
 ## Beta Disclaimer and Support
 
-Please note that XPDRC version 1.0 is currently in Beta. While the core digital signal processing generation pipeline is heavily tested, some features might not work perfectly across all computing environments just yet.
+Please note that XPDRC version 1.0 is currently in Beta. While the core default settings of the  digital signal processing generation pipeline are heavily tested, some features combinations might not work perfectly across all computing environments just yet.
 
 If you encounter any anomalies or bugs, or if you simply have questions about how the algorithms work, please feel free to reach out. You can contact me directly at xpoileremmo@gmail.com.

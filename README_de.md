@@ -19,7 +19,7 @@ Was XPDRC leisten kann:
 - Automatischer Lautstärkeabgleich aller Kanäle.
 - Automatische oder manuelle Zeitausrichtung aller Kanäle.
 - Automatische oder manuelle Ausrichtung eines Subwoofers auf die Hauptlautsprecher (derzeit einzelner Subwoofer).
-- Filtergenerierung von 4096 Taps bis hin zu 131072 für maximale Präzision.
+- Filtergenerierung von 32768 Taps bis hin zu 131072 für maximale Präzision.
 
 und mehr... Einstellungen und Präferenzen können vom Benutzer jederzeit einfach über die lokale Weboberfläche unter localhost:5000 geändert werden; fast jede einzelne Variable im Skript kann über die UI angepasst werden. Für eine einfache Bedienung und beste Ergebnisse in den meisten Situationen empfehlen wir dringend die Standardeinstellungen.
 
