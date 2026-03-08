@@ -39,7 +39,7 @@ and more...  settings and preferences can be easily changed by the user at all t
 Getting XPDRC running is designed to be as simple as possible.
 
 1.  **Install Python**: Ensure you have Python 3.10+ installed on your system.
-2.  **Clone/Download**: Download the source code to your local machine.  
+2.  **Clone/Download**: Download the source code to your local machine or download the zip file from the releases section.  
 3.  **Run REW**: Ensure Room EQ Wizard (REW) is open and its API server is enabled (default port 4735).  
 4.  **Launch**: Double-click the **`Run XPDRC.bat`** file in the project directory.
 
