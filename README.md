@@ -42,7 +42,7 @@ Getting XPDRC running is designed to be as simple as possible.
 2.  **Clone/Download**: Download the source code to your local machine or download the zip file from the releases section.  
 3.  **Run REW**: Ensure Room EQ Wizard (REW) is open and its API server is enabled (default port 4735).
 
-**IMPORTANT**: For first time setup, go to REW's "analysis" tab and change "For imports set t=0 at impulse peak" to "For imports set t=0 at ir start", if you don't do this the math will not turn out as expected
+**IMPORTANT**: For first time setup, go to REW's "analysis" tab and change "For imports set t=0 at impulse peak" to "For imports set t=0 at first sample", if you don't do this the math will not turn out as expected
  
 4.  **Launch**: Double-click the **`Run XPDRC.bat`** file in the project directory.
 
