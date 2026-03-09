@@ -86,6 +86,7 @@ Once configured, click **"Generate Base FIR"** (Phase 1) followed by the green g
 ## Known Bugs:
 
 -If you select a subwoofer measurements and bypass the crossovers, the subwoofer rolloff detection is not working correctly in 1.0, resulting in a mangled subwoofer filter
+
 -Enabling phase corrections but using too low of a target base delay will result in the filters being mangled and unusable, this is not a bug per-se but the user should be warned if values below a certain number could generate bad filters, fix coming soon.
 
 
