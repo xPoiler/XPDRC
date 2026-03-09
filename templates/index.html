@@ -564,20 +564,61 @@
             <div class="grid">
                 <div class="section">
                     <h3 data-i18n="system_ids_header">System IDs & Crossover</h3>
-                    <div class="form-group">
-                        <label data-i18n="mains_ids_label">Mains REW IDs (comma separated, e.g., 1,2) <span
-                                class="tooltip">?<span class="tooltiptext" data-i18n-tip="mains_ids_tip">Comma-separated
-                                    measurement IDs in REW corresponding to your
-                                    main speakers.</span></span></label>
-                        <input type="text" id="mains_ids" required>
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="spatial_avg_enabled">
+                        <label for="spatial_avg_enabled" style="margin: 0; font-size: 1em;"
+                            data-i18n="spatial_avg_label">Advanced Spatial Averaging <span class="tooltip">?<span
+                                    class="tooltiptext" data-i18n-tip="spatial_avg_tip">Weights EQ correction inversely
+                                    to cross-seat measurement variance. Corrects aggressively where all listening
+                                    positions agree, gently where they disagree. Requires multi-position measurements
+                                    per speaker.</span></span></label>
                     </div>
-                    <div class="form-group">
-                        <label data-i18n="sub_id_label">Subwoofer REW ID <span class="tooltip">?<span
-                                    class="tooltiptext" data-i18n-tip="sub_id_tip">The measurement ID in
-                                    REW corresponding to your subwoofer.</span></span></label>
-                        <input type="text" id="lfe_id">
+                    <div id="spatial_avg_settings" style="display: none; margin-bottom: 15px;">
+                        <div id="spatial_speaker_grid"
+                            style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;"></div>
+                        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                            <button type="button" class="btn-secondary" onclick="addSpatialSpeaker()"
+                                style="font-size: 0.85em; padding: 4px 12px;">+ Add Speaker</button>
+                            <button type="button" class="btn-secondary" onclick="removeSpatialSpeaker()"
+                                style="font-size: 0.85em; padding: 4px 12px;">- Remove Speaker</button>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="spatial_threshold_label">Variance Threshold (dB) <span
+                                    class="tooltip">?<span class="tooltiptext"
+                                        data-i18n-tip="spatial_threshold_tip">Standard deviation (dB) at which EQ
+                                        strength drops to 50%. Lower = more conservative (less correction where seats
+                                        disagree).</span></span></label>
+                            <input type="number" id="spatial_avg_threshold_db" value="3.0" step="0.5" min="0.5" max="20"
+                                style="width: 80px;">
+                        </div>
                     </div>
-                    <div class="form-group">
+                    <div id="standard_ids_group">
+                        <div class="form-group">
+                            <label data-i18n="mains_ids_label">Mains REW IDs (comma separated, e.g., 1,2) <span
+                                    class="tooltip">?<span class="tooltiptext"
+                                        data-i18n-tip="mains_ids_tip">Comma-separated
+                                        measurement IDs in REW corresponding to your
+                                        main speakers.</span></span></label>
+                            <input type="text" id="mains_ids" required>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="sub_id_label">Subwoofer REW ID <span class="tooltip">?<span
+                                        class="tooltiptext" data-i18n-tip="sub_id_tip">The measurement ID in
+                                        REW corresponding to your subwoofer.</span></span></label>
+                            <input type="text" id="lfe_id">
+                        </div>
+                    </div>
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="auto_crossover_enabled">
+                        <label for="auto_crossover_enabled" style="margin: 0; font-size: 1em;"
+                            data-i18n="auto_crossover_label">Auto detect and apply optimal crossover between mains and
+                            sub <span class="tooltip">?<span class="tooltiptext"
+                                    data-i18n-tip="auto_crossover_tip">Automatically detects the natural rolloff of
+                                    every speaker and applies a standardized optimal crossover frequency for the entire
+                                    system. Ensures perfect phase coherence between all mains and the
+                                    subwoofer.</span></span></label>
+                    </div>
+                    <div class="form-group" id="fc_setting">
                         <label data-i18n="crossover_freq_label">Crossover Frequency (Hz) <span class="tooltip">?<span
                                     class="tooltiptext" data-i18n-tip="crossover_freq_tip">The frequency
                                     point where bass is transitioned from mains to the subwoofer.</span></span></label>
@@ -590,7 +631,8 @@
                                     (movies/music). Keep under 50ms for low latency (gaming/desktop
                                     use).</span></span></label>
                         <input type="number" id="delay_ms" value="75" step="0.1">
-                        <span class="input-warning">⚠️ Setting this setting too low will output bad filters, use with caution</span>
+                        <span class="input-warning">⚠️ Setting this setting too low will output bad filters, use with
+                            caution</span>
                     </div>
                     <div class="form-group">
                         <label data-i18n="mains_xo_type_label">Mains Crossover Type <span class="tooltip">?<span
@@ -774,6 +816,16 @@
                                     class="tooltiptext" data-i18n-tip="vol_align_tip">Automatically adjusts the overall
                                     volume of
                                     the speakers to match.</span></span></label>
+                    </div>
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;"
+                        id="direct_sound_vol_align_group">
+                        <input type="checkbox" id="direct_sound_vol_align">
+                        <label for="direct_sound_vol_align" style="margin: 0; font-size: 1em;"
+                            data-i18n="direct_sound_vol_align_label">Direct Sound Volume Alignment <span
+                                class="tooltip">?<span class="tooltiptext"
+                                    data-i18n-tip="direct_sound_vol_align_tip">Uses the direct sound (FDW windowed)
+                                    magnitude instead of the steady-state frequency response for level matching. This
+                                    strips room influence from the balance calculation.</span></span></label>
                     </div>
                     <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
                         <input type="checkbox" id="mains_bandlimit_high_enabled">
@@ -1470,12 +1522,95 @@
             panel.style.pointerEvents = e.target.checked ? 'none' : 'auto';
         });
 
+        document.getElementById('vol_align_enabled').addEventListener('change', function (e) {
+            const panel = document.getElementById('direct_sound_vol_align_group');
+            panel.style.opacity = e.target.checked ? '1' : '0.35';
+            panel.style.pointerEvents = e.target.checked ? 'auto' : 'none';
+        });
+
+        document.getElementById('auto_crossover_enabled').addEventListener('change', function (e) {
+            updateSubSettingsVisibility();
+        });
+
+        document.getElementById('spatial_avg_enabled').addEventListener('change', function (e) {
+            const settings = document.getElementById('spatial_avg_settings');
+            const stdIds = document.getElementById('standard_ids_group');
+            if (e.target.checked) {
+                settings.style.display = 'block';
+                stdIds.style.opacity = '0.35';
+                stdIds.style.pointerEvents = 'none';
+                // Add default speakers if grid is empty
+                if (document.getElementById('spatial_speaker_grid').children.length === 0) {
+                    addSpatialSpeaker('L');
+                    addSpatialSpeaker('R');
+                    addSpatialSpeaker('Sub');
+                }
+            } else {
+                settings.style.display = 'none';
+                stdIds.style.opacity = '1';
+                stdIds.style.pointerEvents = 'auto';
+            }
+            updateVolumeAlignmentVisibility();
+        });
+
+        let spatialSpeakerCount = 0;
+        function addSpatialSpeaker(label) {
+            spatialSpeakerCount++;
+            const grid = document.getElementById('spatial_speaker_grid');
+            const row = document.createElement('div');
+            row.className = 'spatial-speaker-row';
+            row.style.cssText = 'display: flex; align-items: center; gap: 8px;';
+            row.dataset.speakerId = spatialSpeakerCount;
+            const defaultLabel = label || 'Speaker ' + spatialSpeakerCount;
+            row.innerHTML = `
+                <input type="text" class="spatial-label" value="${defaultLabel}" style="width: 100px; font-size: 0.9em;" placeholder="Label">
+                <span style="color: #aaa; font-size: 0.85em;">IDs:</span>
+                <input type="text" class="spatial-ids" placeholder="1, 4, 7" style="flex: 1; font-size: 0.9em;">
+            `;
+            grid.appendChild(row);
+        }
+
+        function removeSpatialSpeaker() {
+            const grid = document.getElementById('spatial_speaker_grid');
+            if (grid.children.length > 0) {
+                grid.removeChild(grid.lastChild);
+            }
+        }
+
+        function getSpatialSpeakerData() {
+            const result = {};
+            document.querySelectorAll('.spatial-speaker-row').forEach(row => {
+                const label = row.querySelector('.spatial-label').value.trim();
+                const ids = row.querySelector('.spatial-ids').value.split(',').map(s => s.trim()).filter(Boolean);
+                if (label && ids.length > 0) {
+                    result[label] = ids;
+                }
+            });
+            return result;
+        }
+
+        function setSpatialSpeakerData(data) {
+            const grid = document.getElementById('spatial_speaker_grid');
+            grid.innerHTML = '';
+            spatialSpeakerCount = 0;
+            if (data && typeof data === 'object') {
+                for (const [label, ids] of Object.entries(data)) {
+                    addSpatialSpeaker(label);
+                    const rows = grid.querySelectorAll('.spatial-speaker-row');
+                    const lastRow = rows[rows.length - 1];
+                    lastRow.querySelector('.spatial-ids').value = Array.isArray(ids) ? ids.join(', ') : ids;
+                }
+            }
+        }
+
         // Grey out sub-specific settings when no sub ID is entered
         function updateSubSettingsVisibility() {
             const lfeId = document.getElementById('lfe_id').value.trim();
             const hasSub = lfeId.length > 0;
+            const isAutoXo = document.getElementById('auto_crossover_enabled').checked;
+
             const subElements = [
-                'fc', 'crossover_mains', 'crossover_sub',
+                'fc', 'auto_crossover_enabled', 'crossover_mains', 'crossover_sub',
                 'phase_mains', 'phase_sub',
                 'sub_eq_enabled', 'sub_gd_eq_enabled',
                 'sub_bandlimit_low_enabled', 'sub_bandlimit_high_enabled',
@@ -1486,8 +1621,17 @@
                 if (el) {
                     const parent = el.closest('.form-group') || el.parentElement;
                     if (parent) {
-                        parent.style.opacity = hasSub ? '1' : '0.35';
-                        parent.style.pointerEvents = hasSub ? 'auto' : 'none';
+                        let targetOpacity = hasSub ? '1' : '0.35';
+                        let targetEvents = hasSub ? 'auto' : 'none';
+
+                        // Specific override for manual crossover freq field
+                        if (id === 'fc' && hasSub && isAutoXo) {
+                            targetOpacity = '0.35';
+                            targetEvents = 'none';
+                        }
+
+                        parent.style.opacity = targetOpacity;
+                        parent.style.pointerEvents = targetEvents;
                     }
                 }
             });
@@ -1545,8 +1689,88 @@
                 manualRolloff.style.display = hasSub ? 'none' : 'contents';
             }
         }
-        document.getElementById('lfe_id').addEventListener('input', updateSubSettingsVisibility);
+        document.getElementById('lfe_id').addEventListener('input', () => {
+            updateSubSettingsVisibility();
+            updateVolumeAlignmentVisibility();
+        });
         updateSubSettingsVisibility(); // Apply on load
+
+        // Grey out volume alignment options until at least two speakers are present
+        function updateVolumeAlignmentVisibility() {
+            let speakersWithIds = 0;
+            const spatialEnabled = document.getElementById('spatial_avg_enabled').checked;
+
+            if (spatialEnabled) {
+                const spatialData = getSpatialSpeakerData();
+                speakersWithIds = Object.keys(spatialData).length;
+            } else {
+                const mainsRaw = document.getElementById('mains_ids').value;
+                const mains = mainsRaw.split(',').map(s => s.trim()).filter(Boolean);
+                const lfe = document.getElementById('lfe_id').value.trim();
+                speakersWithIds = mains.length + (lfe ? 1 : 0);
+            }
+
+            const canAlign = speakersWithIds >= 2;
+            const volAlignElements = [
+                'vol_align_enabled',
+                'direct_sound_vol_align',
+                'vol_match_low',
+                'vol_match_high'
+            ];
+
+            volAlignElements.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const parent = el.closest('.form-group') || el.parentElement;
+                    if (parent) {
+                        parent.style.opacity = canAlign ? '1' : '0.35';
+                        parent.style.pointerEvents = canAlign ? 'auto' : 'none';
+                    }
+                }
+            });
+
+            // Additionally handle the "Direct Sound Volume Alignment" group's own dependency on "Volume Alignment"
+            if (canAlign) {
+                const volAlignEnabled = document.getElementById('vol_align_enabled').checked;
+                const directSoundGroup = document.getElementById('direct_sound_vol_align_group');
+                if (directSoundGroup) {
+                    directSoundGroup.style.opacity = volAlignEnabled ? '1' : '0.35';
+                    directSoundGroup.style.pointerEvents = volAlignEnabled ? 'auto' : 'none';
+                }
+            }
+        }
+
+        document.getElementById('mains_ids').addEventListener('input', () => {
+            updateDelayInputs();
+            updateVolumeAlignmentVisibility();
+        });
+        document.getElementById('spatial_avg_enabled').addEventListener('change', updateVolumeAlignmentVisibility);
+
+        // Watch for spatial speaker changes
+        const originalAddSpatial = addSpatialSpeaker;
+        window.addSpatialSpeaker = (label) => {
+            originalAddSpatial(label);
+            const rows = document.querySelectorAll('.spatial-speaker-row');
+            rows[rows.length - 1].querySelector('.spatial-ids').addEventListener('input', updateVolumeAlignmentVisibility);
+            updateVolumeAlignmentVisibility();
+        };
+
+        const originalRemoveSpatial = removeSpatialSpeaker;
+        window.removeSpatialSpeaker = () => {
+            originalRemoveSpatial();
+            updateVolumeAlignmentVisibility();
+        };
+
+        const originalSetSpatial = setSpatialSpeakerData;
+        window.setSpatialSpeakerData = (data) => {
+            originalSetSpatial(data);
+            document.querySelectorAll('.spatial-ids').forEach(input => {
+                input.addEventListener('input', updateVolumeAlignmentVisibility);
+            });
+            updateVolumeAlignmentVisibility();
+        };
+
+        updateVolumeAlignmentVisibility(); // Apply on load
 
         function updateDelayInputs() {
             const container = document.getElementById('dynamic-delays-container');
@@ -1586,8 +1810,7 @@
             });
         }
 
-        document.getElementById('mains_ids').addEventListener('input', updateDelayInputs);
-        document.getElementById('lfe_id').addEventListener('input', updateDelayInputs);
+        // Handled by consolidated listeners above
 
         function log(msg) {
             const c = document.getElementById('console-output');
@@ -1605,6 +1828,10 @@
                 mains_ids: document.getElementById('mains_ids').value.split(',').map(s => s.trim()).filter(Boolean),
                 lfe_id: document.getElementById('lfe_id').value.trim(),
                 fc: parseFloat(document.getElementById('fc').value),
+                auto_crossover_enabled: document.getElementById('auto_crossover_enabled').checked,
+                spatial_avg_enabled: document.getElementById('spatial_avg_enabled').checked,
+                spatial_speakers: getSpatialSpeakerData(),
+                spatial_avg_threshold_db: parseFloat(document.getElementById('spatial_avg_threshold_db').value),
                 crossover_mains: document.getElementById('crossover_mains').value,
                 crossover_sub: document.getElementById('crossover_sub').value,
                 phase_mains: document.getElementById('phase_mains').value,
@@ -1619,6 +1846,7 @@
                 mains_eq_enabled: document.getElementById('mains_eq_enabled').checked,
                 mains_phase_lin_enabled: document.getElementById('mains_phase_lin_enabled').checked,
                 vol_align_enabled: document.getElementById('vol_align_enabled').checked,
+                direct_sound_vol_align: document.getElementById('direct_sound_vol_align').checked,
                 sub_eq_enabled: document.getElementById('sub_eq_enabled').checked,
                 sub_bandlimit_low_enabled: document.getElementById('sub_bandlimit_low_enabled').checked,
                 sub_bandlimit_low_hz: parseFloat(document.getElementById('sub_bandlimit_low_hz').value),
@@ -1699,6 +1927,15 @@
                     }
 
                     document.getElementById('fc').value = data.fc || 80;
+                    document.getElementById('auto_crossover_enabled').checked = data.auto_crossover_enabled || false;
+                    document.getElementById('auto_crossover_enabled').dispatchEvent(new Event('change'));
+
+                    document.getElementById('spatial_avg_enabled').checked = data.spatial_avg_enabled || false;
+                    if (data.spatial_speakers) {
+                        setSpatialSpeakerData(data.spatial_speakers);
+                    }
+                    document.getElementById('spatial_avg_threshold_db').value = data.spatial_avg_threshold_db || 3.0;
+                    document.getElementById('spatial_avg_enabled').dispatchEvent(new Event('change'));
                     document.getElementById('crossover_mains').value = data.crossover_mains || 'lr4';
                     document.getElementById('crossover_sub').value = data.crossover_sub || 'lr4';
                     document.getElementById('phase_mains').value = data.phase_mains || 'linear';
@@ -1720,6 +1957,8 @@
                     document.getElementById('mains_eq_enabled').checked = data.mains_eq_enabled !== undefined ? data.mains_eq_enabled : true;
                     document.getElementById('mains_phase_lin_enabled').checked = data.mains_phase_lin_enabled !== undefined ? data.mains_phase_lin_enabled : true;
                     document.getElementById('vol_align_enabled').checked = data.vol_align_enabled !== undefined ? data.vol_align_enabled : true;
+                    document.getElementById('vol_align_enabled').dispatchEvent(new Event('change'));
+                    document.getElementById('direct_sound_vol_align').checked = data.direct_sound_vol_align || false;
                     document.getElementById('sub_eq_enabled').checked = data.sub_eq_enabled !== undefined ? data.sub_eq_enabled : true;
                     if (document.getElementById('global_eq_enabled')) {
                         document.getElementById('global_eq_enabled').checked = data.global_eq_enabled !== undefined ? data.global_eq_enabled : true;
@@ -1800,6 +2039,7 @@
                     document.getElementById('sub_high_rolloff_hz').value = data.sub_high_rolloff_hz || 0;
 
                     updateSubSettingsVisibility();
+                    updateVolumeAlignmentVisibility();
                     log("> Config loaded successfully.");
                 } catch (err) {
                     log("> Error parsing JSON config.");
@@ -2156,7 +2396,21 @@
             if (subStr) {
                 document.getElementById('lfe_id').value = subStr;
             }
+
+            // Also populate spatial averaging fields from raw per-position measurements
+            if (document.getElementById('spatial_avg_enabled').checked) {
+                const spatialData = {};
+                for (const ch of wizState.channels) {
+                    if (wizState.measurements[ch] && wizState.measurements[ch].length > 0) {
+                        spatialData[ch] = wizState.measurements[ch].map(m => String(m.id));
+                    }
+                }
+                setSpatialSpeakerData(spatialData);
+                log("✨ Spatial Averaging: populated per-speaker measurement IDs from wizard data.");
+            }
+
             updateSubSettingsVisibility();
+            updateVolumeAlignmentVisibility();
             updateDelayInputs();
             log("✨ Setup Wizard successfully applied averages to the configuration.");
         }
@@ -2178,12 +2432,18 @@
                 github_link: "GitHub",
                 configuration_header: "Configuration",
                 system_ids_header: "System IDs & Crossover",
+                spatial_avg_label: "Advanced Spatial Averaging ",
+                spatial_avg_tip: "Weights EQ correction inversely to cross-seat variance. Corrects aggressively where all listening positions agree, gently where they disagree.",
+                spatial_threshold_label: "Variance Threshold (dB) ",
+                spatial_threshold_tip: "Standard deviation (dB) at which EQ strength drops to 50%. Lower = more conservative.",
                 mains_ids_label: "Mains REW IDs (comma separated, e.g., 1,2) ",
                 mains_ids_tip: "Comma-separated measurement IDs in REW corresponding to your main speakers.",
                 sub_id_label: "Subwoofer REW ID ",
                 sub_id_tip: "The measurement ID in REW corresponding to your subwoofer.",
                 crossover_freq_label: "Crossover Frequency (Hz) ",
                 crossover_freq_tip: "The frequency point where bass is transitioned from mains to the subwoofer.",
+                auto_crossover_label: "Auto detect and apply optimal crossover between mains and sub ",
+                auto_crossover_tip: "Automatically detects the natural rolloff of every speaker and applies a standardized optimal crossover frequency for the entire system. Ensures perfect phase coherence between all mains and the subwoofer.",
                 target_delay_label: "Target Base Delay (ms) ",
                 target_delay_tip: "Added baseline delay to anchor the filter generation. Use 75ms+ for best deep bass correction (movies/music). Keep under 50ms for low latency (gaming/desktop use).",
                 mains_xo_type_label: "Mains Crossover Type ",
@@ -2227,6 +2487,8 @@
                 phase_lin_label: "Phase Linearization",
                 vol_align_label: "Volume Alignment ",
                 vol_align_tip: "Automatically adjusts the overall volume of the speakers to match.",
+                direct_sound_vol_align_label: "Direct Sound Volume Alignment ",
+                direct_sound_vol_align_tip: "Uses the direct sound (FDW windowed) magnitude instead of the steady-state frequency response for level matching. This strips room influence from the balance calculation.",
                 no_correction_above_label: "No Correction Above",
                 magnitude_eq_house_label: "Magnitude EQ (House Curve)",
                 group_delay_eq_label: "Group Delay EQ ",
@@ -2352,12 +2614,18 @@
                 github_link: "GitHub",
                 configuration_header: "Configurazione",
                 system_ids_header: "ID Sistema e Crossover",
+                spatial_avg_label: "Media Spaziale Avanzata ",
+                spatial_avg_tip: "Pesa la correzione EQ inversamente alla varianza tra le posizioni di ascolto. Corregge aggressivamente dove tutte le posizioni concordano.",
+                spatial_threshold_label: "Soglia di Varianza (dB) ",
+                spatial_threshold_tip: "Deviazione standard (dB) alla quale la forza dell'EQ scende al 50%. Più bassa = più conservativa.",
                 mains_ids_label: "ID REW Diffusori (separati da virgola, es. 1,2) ",
                 mains_ids_tip: "ID delle misurazioni in REW corrispondenti ai diffusori principali, separati da virgola.",
                 sub_id_label: "ID REW Subwoofer ",
                 sub_id_tip: "L'ID della misurazione in REW corrispondente al subwoofer.",
                 crossover_freq_label: "Frequenza di Crossover (Hz) ",
                 crossover_freq_tip: "Il punto di frequenza in cui i bassi passano dai diffusori principali al subwoofer.",
+                auto_crossover_label: "Rileva e applica crossover ottimale tra diffusori e sub ",
+                auto_crossover_tip: "Rileva automaticamente il rolloff naturale di ogni diffusore e applica una frequenza di crossover ottimale standardizzata per l'intero sistema. Garantisce una perfetta coerenza di fase tra tutti i diffusori e il subwoofer.",
                 target_delay_label: "Ritardo Base Target (ms) ",
                 target_delay_tip: "Ritardo base aggiunto per ancorare la generazione del filtro. Usa 75ms+ per la migliore correzione dei bassi profondi (film/musica). Mantieni sotto i 50ms per una bassa latenza (gaming/uso desktop).",
                 mains_xo_type_label: "Tipo Crossover Diffusori ",
@@ -2401,6 +2669,8 @@
                 phase_lin_label: "Linearizzazione Fase",
                 vol_align_label: "Allineamento Volume ",
                 vol_align_tip: "Regola automaticamente il volume generale dei diffusori per farli corrispondere.",
+                direct_sound_vol_align_label: "Allineamento Volume Suono Diretto ",
+                direct_sound_vol_align_tip: "Usa la magnitudine del suono diretto (finestra FDW) invece della risposta in frequenza stazionaria per il bilanciamento dei livelli. Rimuove l'influenza della stanza dal calcolo del bilanciamento.",
                 no_correction_above_label: "Nessuna Correzione Sopra",
                 magnitude_eq_house_label: "EQ Magnitudo (Curva House)",
                 group_delay_eq_label: "EQ Ritardo di Gruppo ",
@@ -2526,12 +2796,18 @@
                 github_link: "GitHub",
                 configuration_header: "Konfiguration",
                 system_ids_header: "System-IDs & Trennfrequenz",
+                spatial_avg_label: "Fortgeschrittene räumliche Mittelung ",
+                spatial_avg_tip: "Gewichtet die EQ-Korrektur umgekehrt zur Varianz zwischen den Sitzpositionen. Korrigiert aggressiv wo alle Sitze übereinstimmen.",
+                spatial_threshold_label: "Varianz-Schwellenwert (dB) ",
+                spatial_threshold_tip: "Standardabweichung (dB), bei der die EQ-Stärke auf 50% sinkt. Niedriger = konservativer.",
                 mains_ids_label: "Hauptlautsprecher REW-IDs (kommagetrennt, z.B. 1,2) ",
                 mains_ids_tip: "Kommagetrennte Mess-IDs in REW, die Ihren Hauptlautsprechern entsprechen.",
                 sub_id_label: "Subwoofer REW-ID ",
                 sub_id_tip: "Die Mess-ID in REW, die Ihrem Subwoofer entspricht.",
                 crossover_freq_label: "Trennfrequenz (Hz) ",
                 crossover_freq_tip: "Die Frequenz, bei der der Bass von den Hauptlautsprechern zum Subwoofer übergeht.",
+                auto_crossover_label: "Optimale Trennfrequenz zwischen Mains und Sub erkennen und anwenden ",
+                auto_crossover_tip: "Erkennt automatisch den natürlichen Rolloff jedes Lautsprechers und wendet eine standardisierte optimale Trennfrequenz für das gesamte System an. Gewährleistet perfekte Phasenkohärenz zwischen allen Hauptlautsprechern und dem Subwoofer.",
                 target_delay_label: "Ziel-Basisverzögerung (ms) ",
                 target_delay_tip: "Hinzugefügte Basisverzögerung zur Verankerung der Filtergenerierung. Verwenden Sie 75ms+ für die beste Tiefbasskorrektur (Filme/Musik). Halten Sie sie für niedrige Latenz unter 50ms (Gaming/Desktop).",
                 mains_xo_type_label: "Hauptlautsprecher Crossover-Typ ",
@@ -2575,6 +2851,8 @@
                 phase_lin_label: "Phasenlinearisierung",
                 vol_align_label: "Lautstärkeabgleich ",
                 vol_align_tip: "Passt die Gesamtlautstärke der Lautsprecher automatisch aneinander an.",
+                direct_sound_vol_align_label: "Direktschall-Lautstärkeabgleich ",
+                direct_sound_vol_align_tip: "Verwendet die Direktschall-Magnitude (FDW-gefenstert) anstelle der stationären Frequenzantwort für den Pegelabgleich. Entfernt den Raumeinfluss aus der Balance-Berechnung.",
                 no_correction_above_label: "Keine Korrektur oberhalb von",
                 magnitude_eq_house_label: "Betrags-EQ (Hauskurve)",
                 group_delay_eq_label: "Gruppenlaufzeit-EQ ",
@@ -2700,12 +2978,18 @@
                 github_link: "GitHub",
                 configuration_header: "Configuration",
                 system_ids_header: "IDs Système & Crossover",
+                spatial_avg_label: "Moyenne Spatiale Avancée ",
+                spatial_avg_tip: "Pondère la correction EQ inversement à la variance entre les places. Corrige agressivement là où toutes les places concordent.",
+                spatial_threshold_label: "Seuil de Variance (dB) ",
+                spatial_threshold_tip: "Écart-type (dB) auquel la force de l'EQ tombe à 50%. Plus bas = plus conservateur.",
                 mains_ids_label: "IDs REW Enceintes (séparés par virgule, ex: 1,2) ",
                 mains_ids_tip: "IDs des mesures dans REW correspondant à vos enceintes principales, séparés par des virgules.",
                 sub_id_label: "ID REW Caisson de Basses ",
                 sub_id_tip: "L'ID de la mesure dans REW correspondant à votre caisson de basses.",
                 crossover_freq_label: "Fréquence de Crossover (Hz) ",
                 crossover_freq_tip: "La fréquence à laquelle les basses passent des enceintes principales au caisson.",
+                auto_crossover_label: "Détecter et appliquer le crossover optimal entre enceintes et caisson ",
+                auto_crossover_tip: "Détecte automatiquement le rolloff naturel de chaque enceinte et applique une fréquence de crossover optimale standardisée pour l'ensemble du système. Assure une parfaite cohérence de phase entre toutes les enceintes et le caisson de basses.",
                 target_delay_label: "Délai de Base Cible (ms) ",
                 target_delay_tip: "Délai de base ajouté pour ancrer la génération du filtre. Utilisez 75ms+ pour la meilleure correction des basses profondes (films/musique). Gardez moins de 50ms pour une faible latence (gaming/bureau).",
                 mains_xo_type_label: "Type Crossover Enceintes ",
@@ -2749,6 +3033,8 @@
                 phase_lin_label: "Linéarisation de Phase",
                 vol_align_label: "Alignement du Volume ",
                 vol_align_tip: "Ajuste automatiquement le volume global des enceintes pour les faire correspondre.",
+                direct_sound_vol_align_label: "Alignement Volume Son Direct ",
+                direct_sound_vol_align_tip: "Utilise la magnitude du son direct (fenêtré FDW) au lieu de la réponse en fréquence stationnaire pour le réglage des niveaux. Élimine l'influence de la pièce du calcul d'équilibre.",
                 no_correction_above_label: "Pas de Correction Au-dessus",
                 magnitude_eq_house_label: "EQ Magnitude (Courbe House)",
                 group_delay_eq_label: "EQ Délai de Groupe ",

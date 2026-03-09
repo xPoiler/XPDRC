@@ -507,6 +507,51 @@ def detect_speaker_rolloff(mag_raw, freqs, threshold_db=-10.0, ref_low=200.0, re
     
     return float(low_rolloff_hz), float(high_rolloff_hz)
 
+def compute_spatial_variance_weight(position_ids, freqs, fdw_cycles, fs, threshold_db=3.0):
+    """
+    Compute a frequency-dependent weight W(f) in [0,1] based on cross-seat variance.
+    W=1.0 at frequencies where all seats agree, W->0 where variance is high.
+    
+    position_ids: list of REW measurement IDs (one per listening position)
+    threshold_db: std deviation (dB) at which W drops to 0.5
+    """
+    if len(position_ids) < 2:
+        return np.ones_like(freqs)
+    
+    mags_db = []
+    for pid in position_ids:
+        try:
+            ir = fetch_ir_data(int(pid))
+            ir_long = get_centered_ir(ir, is_lfe=False)
+            H = get_fdw_spectrum(ir_long, freqs, cycles=fdw_cycles, fs=fs)
+            mag_db = 20 * np.log10(np.maximum(np.abs(H), 1e-12))
+            mag_smooth = log_smoothed_fast(mag_db, freqs, fraction=3)
+            mags_db.append(mag_smooth)
+        except Exception:
+            continue
+    
+    if len(mags_db) < 2:
+        return np.ones_like(freqs)
+    
+    std_db = np.std(mags_db, axis=0)
+    W = 1.0 / (1.0 + (std_db / threshold_db) ** 2)
+    return W
+
+def get_crossover_threshold_db(crossover_type):
+    """
+    Returns the dB point at which a speaker's rolloff should be detected
+    for optimal crossover placement with the given crossover type.
+    
+    Linkwitz-Riley: -6 dB (HPF + LPF each at -6dB sum to unity)
+    Butterworth:    -3 dB (each filter is -3dB at fc)
+    Bessel:         -3 dB (with norm='phase')
+    """
+    ctype = crossover_type[:2].lower() if len(crossover_type) >= 2 else 'lr'
+    if ctype == 'lr':
+        return -6.0
+    else:  # bw, bs
+        return -3.0
+
 # ==============================================================================
 # FLASK ROUTES
 # ==============================================================================
@@ -556,6 +601,7 @@ def run_phase1():
         mains_eq_enabled = config.get('mains_eq_enabled', True)
         mains_phase_lin_enabled = config.get('mains_phase_lin_enabled', True)
         vol_align_enabled = config.get('vol_align_enabled', True)
+        direct_sound_vol_align = config.get('direct_sound_vol_align', False)
         sub_eq_enabled = config.get('sub_eq_enabled', True)
         sub_bandlimit_low_enabled = config.get('sub_bandlimit_low_enabled', True)
         sub_bandlimit_low_hz = float(config.get('sub_bandlimit_low_hz', 10.0))
@@ -595,11 +641,41 @@ def run_phase1():
         is_full_range_sub = crossover_sub.lower() in ('none', 'bypass')
         
         auto_align_enabled = config.get('auto_align_enabled', True)
+        auto_crossover_enabled = config.get('auto_crossover_enabled', False)
+        spatial_avg_enabled = config.get('spatial_avg_enabled', False)
+        spatial_speakers = config.get('spatial_speakers', {})
+        spatial_avg_threshold_db = float(config.get('spatial_avg_threshold_db', 3.0))
         
         clog("\n=== XPDRC 1.0 (WEB) ===")
         clog(f"Settings: {TARGET_SAMPLE_RATE}Hz / {FILTER_TAPS} Taps | REW API: {REW_API_URL}")
         clog("Fetching measurements from REW...")
         measurements = get_rew_measurements()
+        freqs = fft.rfftfreq(FILTER_TAPS, 1/TARGET_SAMPLE_RATE)
+        
+        # Common-Ground Crossover Detection
+        fc_for_main = {}  # m_id -> fc for that speaker
+        if auto_crossover_enabled and not is_full_range_mains:
+            clog("\n  -> Auto-detecting and applying optimal common crossover...")
+            threshold_db = get_crossover_threshold_db(crossover_mains)
+            detected_fcs = []
+            for m_id in mains_ids:
+                ir_detect = fetch_ir_data(m_id)
+                ir_detect_long = get_centered_ir(ir_detect, is_lfe=True)
+                H_detect = fft.rfft(ir_detect_long)
+                low_rolloff, _ = detect_speaker_rolloff(np.abs(H_detect), freqs, threshold_db=threshold_db)
+                det_fc = max(low_rolloff, 20.0)
+                detected_fcs.append(det_fc)
+                clog(f"     Main ID {m_id}: rolloff at {det_fc:.1f} Hz")
+            
+            fc_sub = float(np.mean(detected_fcs))
+            # Standardize: all speakers + sub use the common average frequency
+            for m_id in mains_ids:
+                fc_for_main[m_id] = fc_sub
+            clog(f"  -> Applied Common Crossover: {fc_sub:.1f} Hz (average of all rolloffs)")
+        else:
+            for m_id in mains_ids:
+                fc_for_main[m_id] = fc
+            fc_sub = fc
         
         # Step 1: Acoustic Delays
         clog("\n[1] Processing Acoustic Delays...")
@@ -624,7 +700,6 @@ def run_phase1():
         global_anchor_ms = max(delays_ms_dict.values()) if delays_ms_dict else 0.0
         clog(f"   -> Furthest speaker arrives at {global_anchor_ms:+.3f} ms. This is the global time anchor.")
 
-        freqs = fft.rfftfreq(FILTER_TAPS, 1/TARGET_SAMPLE_RATE)
         
         # VBA Setup
         vba_enabled = config.get('vba_enabled', True)
@@ -679,6 +754,18 @@ def run_phase1():
                 clog(f"  -> Auto-detected mains high rolloff at {mains_rolloff_high:.1f} Hz (-10dB, from vector avg of {len(mains_ids)} mains)")
 
         H_correction_dict = {}
+        H_fdw_dict = {}
+        
+        # Build spatial averaging mapping: averaged main_id -> list of raw position IDs
+        spatial_positions_for_main = {}
+        if spatial_avg_enabled and spatial_speakers:
+            mains_channels = [ch for ch in spatial_speakers.keys() if ch.upper() not in ('LFE', 'SUB', 'SW')]
+            for i, m_id in enumerate(mains_ids):
+                if i < len(mains_channels):
+                    ch_label = mains_channels[i]
+                    spatial_positions_for_main[m_id] = [str(p) for p in spatial_speakers[ch_label]]
+            clog(f"  -> Spatial Averaging enabled for {len(spatial_positions_for_main)} channels")
+        
         for m_id in mains_ids:
             ir = fetch_ir_data(m_id)
             ir_short = get_centered_ir(ir, is_lfe=False) 
@@ -687,6 +774,7 @@ def run_phase1():
             H_long = fft.rfft(ir_long)
             
             H_fdw = get_fdw_spectrum(ir_long, freqs, cycles=fdw_cycles, fs=TARGET_SAMPLE_RATE)
+            H_fdw_dict[m_id] = H_fdw
             
             lifter = np.zeros(FILTER_TAPS)
             lifter[0] = 1
@@ -711,6 +799,12 @@ def run_phase1():
                 if regularized_inversion:
                     target_fdw = np.full_like(freqs, target_level)
                     target_raw = np.full_like(freqs, target_level)
+                    
+                    if auto_crossover_enabled and not is_full_range_mains:
+                        H_target_acoustic = generate_crossover(freqs, fc_for_main[m_id], 'highpass', crossover_type=crossover_mains, phase_type='linear')
+                        target_fdw = target_fdw * np.abs(H_target_acoustic)
+                        target_raw = target_raw * np.abs(H_target_acoustic)
+                    
                     eq_mag_fdw = kirkeby_regularized_inverse(mag_fdw_smoothed, freqs, target_fdw, beta_db=reg_beta_db)
                     eq_mag_raw = kirkeby_regularized_inverse(mag_raw_smoothed, freqs, target_raw, beta_db=reg_beta_db)
                     # Safety hard limits on top of regularization
@@ -718,8 +812,13 @@ def run_phase1():
                     eq_mag_raw = np.clip(eq_mag_raw, 1e-4, 10 ** (max_boost_low / 20.0))
                     clog(f"  -> Mains EQ: Kirkeby Regularized Inversion (β={reg_beta_db:.1f} dB)")
                 else:
-                    eq_mag_fdw = target_level / np.maximum(mag_fdw_smoothed, 1e-12)
-                    eq_mag_raw = target_level / np.maximum(mag_raw_smoothed, 1e-12)
+                    target_final = np.full_like(freqs, target_level)
+                    if auto_crossover_enabled and not is_full_range_mains:
+                        H_target_acoustic = generate_crossover(freqs, fc_for_main[m_id], 'highpass', crossover_type=crossover_mains, phase_type='linear')
+                        target_final = target_final * np.abs(H_target_acoustic)
+                        
+                    eq_mag_fdw = target_final / np.maximum(mag_fdw_smoothed, 1e-12)
+                    eq_mag_raw = target_final / np.maximum(mag_raw_smoothed, 1e-12)
                     eq_mag_fdw = np.clip(eq_mag_fdw, 1e-4, 10 ** (max_boost_high / 20.0))
                     eq_mag_raw = np.clip(eq_mag_raw, 1e-4, 10 ** (max_boost_low / 20.0)) 
                 
@@ -739,9 +838,16 @@ def run_phase1():
                     f_low_lower_start = f_low_lower_end * 0.75
                     f_high_upper_start = min(mains_rolloff_high, 20000.0)
                     f_high_upper_end = f_high_upper_start * 1.1
+                elif auto_crossover_enabled:
+                    # Acoustic Target Alignment: stay active down to fc/2 to shape the slope
+                    f_low_lower_end = fc_for_main[m_id] / 2.0
+                    f_low_lower_start = f_low_lower_end * 0.75
+                    f_high_upper_start = 20000.0
+                    f_high_upper_end = 22000.0
+                    clog(f"  -> Acoustic Target Alignment: Shaping slope at {fc_for_main[m_id]:.1f} Hz")
                 else:
                     # Standard mode: sub handles low end, fade below fc/2
-                    f_low_lower_end = fc / 2.0
+                    f_low_lower_end = fc_for_main[m_id] / 2.0
                     f_low_lower_start = f_low_lower_end * 0.75
                     f_high_upper_start = 20000.0
                     f_high_upper_end = 22000.0
@@ -794,6 +900,18 @@ def run_phase1():
                         clog(f"  -> Applying House Curve to Full-Range Mains (+{house_boost:.1f}dB bass boost).")
                     eq_mag_final = eq_mag_final * hc_shape
                 
+                
+                # Spatial Averaging: attenuate EQ where cross-seat variance is high
+                if spatial_avg_enabled and m_id in spatial_positions_for_main:
+                    speaker_positions = spatial_positions_for_main[m_id]
+                    if len(speaker_positions) >= 2:
+                        W_spatial = compute_spatial_variance_weight(
+                            speaker_positions, freqs, fdw_cycles, TARGET_SAMPLE_RATE, 
+                            threshold_db=spatial_avg_threshold_db
+                        )
+                        eq_mag_final = eq_mag_final * W_spatial + 1.0 * (1.0 - W_spatial)
+                        clog(f"  -> Applied Spatial Averaging (threshold={spatial_avg_threshold_db:.1f} dB, {len(speaker_positions)} positions)")
+                
                 cepstrum = fft.irfft(np.log(np.maximum(eq_mag_final, 1e-12)), n=FILTER_TAPS)
                 H_eq_flat = np.exp(fft.rfft(cepstrum * lifter))
             else:
@@ -824,12 +942,22 @@ def run_phase1():
                     if np.any(transition_idx):
                         W[transition_idx] = 0.5 * (1 - np.cos(np.pi * (freqs[transition_idx] - phase_low_fade_start) / (phase_low_limit - phase_low_fade_start)))
                     clog(f"  -> Full-range phase correction: active from {phase_low_limit:.1f} Hz (rolloff * 2)")
+                elif auto_crossover_enabled:
+                    # Acoustic Target Alignment: linearize phase through the crossover point
+                    phase_low_limit = fc_for_main[m_id] / 2.0
+                    phase_low_fade_start = phase_low_limit * 0.75
+                    W = np.zeros_like(freqs)
+                    W[freqs >= phase_low_limit] = 1.0
+                    transition_idx = (freqs > phase_low_fade_start) & (freqs < phase_low_limit)
+                    if np.any(transition_idx):
+                        W[transition_idx] = 0.5 * (1 - np.cos(np.pi * (freqs[transition_idx] - phase_low_fade_start) / (phase_low_limit - phase_low_fade_start)))
+                    clog(f"  -> Linearizing phase through crossover point ({fc_for_main[m_id]:.1f} Hz)")
                 else:
                     # Standard: fade out excess phase below crossover (sub handles that region)
                     W = np.zeros_like(freqs)
-                    W[freqs >= fc] = 1.0  
-                    transition_idx = (freqs > fc/2.0) & (freqs < fc)
-                    W[transition_idx] = 0.5 * (1 - np.cos(np.pi * (freqs[transition_idx] - fc/2.0) / (fc/2.0)))
+                    W[freqs >= fc_for_main[m_id]] = 1.0  
+                    transition_idx = (freqs > fc_for_main[m_id]/2.0) & (freqs < fc_for_main[m_id])
+                    W[transition_idx] = 0.5 * (1 - np.cos(np.pi * (freqs[transition_idx] - fc_for_main[m_id]/2.0) / (fc_for_main[m_id]/2.0)))
                 smoothed_excess_phase_windowed = W * smoothed_excess_phase
                 
                 if mixed_phase_enabled:
@@ -868,7 +996,7 @@ def run_phase1():
                         current_phase_floor_hz = phase_low_limit
                         
                         for p_iter in range(max_phase_iters):
-                            hpf_test = generate_crossover(freqs, fc, 'highpass', crossover_mains, phase_mains)
+                            hpf_test = generate_crossover(freqs, fc_for_main[m_id], 'highpass', crossover_mains, phase_mains)
                             test_H = H_candidate * hpf_test
                             test_fir = generate_final_fir(test_H, freqs, 0.050, log_func=lambda x: None)
                             
@@ -923,13 +1051,21 @@ def run_phase1():
             idx_vol_start = np.argmin(np.abs(freqs - vol_match_low))
             idx_vol_end = np.argmin(np.abs(freqs - vol_match_high))
             
-            for m_id in mains_ids:
-                rew_freqs, rew_mag_db = fetch_fr_data(m_id)
-                rew_mag_db_interp = np.interp(freqs, rew_freqs, rew_mag_db)
-                eq_mag = np.abs(H_correction_dict[m_id])
-                eq_mag_db = 20 * np.log10(np.maximum(eq_mag, 1e-12))
-                simulated_mag_db = rew_mag_db_interp + eq_mag_db
-                mains_levels_db[m_id] = np.mean(simulated_mag_db[idx_vol_start:idx_vol_end])
+            if direct_sound_vol_align:
+                clog("  -> Using Direct Sound (FDW) for volume matching.")
+                for m_id in mains_ids:
+                    fdw_mag = np.abs(H_fdw_dict[m_id])
+                    eq_mag = np.abs(H_correction_dict[m_id])
+                    simulated_fdw_db = 20 * np.log10(np.maximum(fdw_mag * eq_mag, 1e-12))
+                    mains_levels_db[m_id] = np.mean(simulated_fdw_db[idx_vol_start:idx_vol_end])
+            else:
+                for m_id in mains_ids:
+                    rew_freqs, rew_mag_db = fetch_fr_data(m_id)
+                    rew_mag_db_interp = np.interp(freqs, rew_freqs, rew_mag_db)
+                    eq_mag = np.abs(H_correction_dict[m_id])
+                    eq_mag_db = 20 * np.log10(np.maximum(eq_mag, 1e-12))
+                    simulated_mag_db = rew_mag_db_interp + eq_mag_db
+                    mains_levels_db[m_id] = np.mean(simulated_mag_db[idx_vol_start:idx_vol_end])
                 
             target_mains_level_db = np.mean(list(mains_levels_db.values())) if mains_levels_db else 75.0
             
@@ -972,8 +1108,8 @@ def run_phase1():
             lfe_mag = log_smoothed_fast(np.abs(H_lfe_simulated), freqs, fraction=24, variable=False)
             
             if sub_eq_enabled:
-                idx_half = np.argmin(np.abs(freqs - fc/2.0))
-                idx_double = np.argmin(np.abs(freqs - fc*2.0))
+                idx_half = np.argmin(np.abs(freqs - fc_sub/2.0))
+                idx_double = np.argmin(np.abs(freqs - fc_sub*2.0))
                 lfe_mag_db = 20 * np.log10(np.maximum(lfe_mag, 1e-12))
                 
                 sub_native_db = np.mean(lfe_mag_db[idx_half:idx_double])
@@ -1001,7 +1137,7 @@ def run_phase1():
                 target_curve_original = hc_shape * sub_native_level
                 
                 idx_eval_start = np.argmin(np.abs(freqs - house_end))
-                idx_eval_end = np.argmin(np.abs(freqs - fc*2.0))
+                idx_eval_end = np.argmin(np.abs(freqs - fc_sub*2.0))
                 
                 if idx_eval_end > idx_eval_start:
                     gains_needed = lfe_mag[idx_eval_start:idx_eval_end] / np.maximum(hc_shape[idx_eval_start:idx_eval_end], 1e-12)
@@ -1054,8 +1190,8 @@ def run_phase1():
                         W_eq[:idx_lf_end] = 0.0
                 else:
                     # Standard mode: fade above fc*2 to fc*4
-                    fade_start = fc * 2.0
-                    fade_end = fc * 4.0
+                    fade_start = fc_sub * 2.0
+                    fade_end = fc_sub * 4.0
                     W_eq = np.ones_like(freqs)
                     idx_fade_start = np.argmin(np.abs(freqs - fade_start))
                     idx_fade_end = np.argmin(np.abs(freqs - fade_end))
@@ -1146,8 +1282,8 @@ def run_phase1():
                 excess_phase_sub_base = eqd_phase - eqd_min_phase_imag
                 
                 # Frequency Window (fc/2 to 2*fc)
-                gd_low = fc / 2.0
-                gd_high = fc * 2.0
+                gd_low = fc_sub / 2.0
+                gd_high = fc_sub * 2.0
                 W_gd = np.zeros_like(freqs)
                 idx_core = (freqs >= gd_low) & (freqs <= gd_high)
                 W_gd[idx_core] = 1.0
@@ -1195,7 +1331,7 @@ def run_phase1():
                     H_gd_allpass = np.exp(-1j * phase_correction)
                     
                     # Validate ringing on the actual eventual output FIR
-                    lpf = generate_crossover(freqs, fc, 'lowpass', crossover_sub, phase_sub)
+                    lpf = generate_crossover(freqs, fc_sub, 'lowpass', crossover_sub, phase_sub)
                     test_H = H_eq_min_phase * H_gd_allpass * lpf * H_vba  # Full subwoofer processing chain
                     
                     # Use standard time delay (e.g. 50ms) to ensure peak evaluates safely away from zero
@@ -1233,7 +1369,12 @@ def run_phase1():
         mains_exact_delays_s = {}
         
         for m_id in mains_ids:
-            hpf = generate_crossover(freqs, fc, 'highpass', crossover_mains, phase_mains)
+            if auto_crossover_enabled and not is_full_range_mains:
+                hpf = np.ones_like(freqs, dtype=np.complex128)
+                clog(f"  -> Main ID {m_id}: Using Acoustic Target Alignment (FIR-baked slope)")
+            else:
+                hpf = generate_crossover(freqs, fc_for_main[m_id], 'highpass', crossover_mains, phase_mains)
+            
             FIR_base = H_correction_dict[m_id] * hpf
             ir = fetch_ir_data(m_id)
             ir_centered = get_centered_ir(ir, is_lfe=False)
@@ -1247,13 +1388,12 @@ def run_phase1():
             mains_exact_delays_s[m_id] = exact_pad_s
             clog(f"  -> Main ID {m_id} Peak Shift: {induced_shift_s*1000:+.3f} ms | Baked Base Delay: {exact_pad_s*1000:.3f} ms")
             
-            embedded_target_mains = H_correction_dict[m_id] * generate_crossover(freqs, fc, 'highpass', crossover_mains, phase_mains)
-            base_firs[m_id] = generate_final_fir(embedded_target_mains, freqs, exact_pad_s, log_func=clog)
+            base_firs[m_id] = generate_final_fir(FIR_base, freqs, exact_pad_s, log_func=clog)
 
         pad_s_sub = 0.0
         if lfe_id and H_eq_min_phase is not None:
             pad_s_sub = (global_anchor_ms - delays_ms_dict[lfe_id]) / 1000.0
-            lpf = generate_crossover(freqs, fc, 'lowpass', crossover_sub, phase_sub)
+            lpf = generate_crossover(freqs, fc_sub, 'lowpass', crossover_sub, phase_sub)
             embedded_target_sub = H_eq_min_phase * lpf * H_vba
             base_firs[lfe_id] = generate_final_fir(embedded_target_sub, freqs, target_base_delay_s + pad_s_sub, log_func=clog)
             
@@ -1304,7 +1444,11 @@ def run_phase1():
             'sub_bandlimit_low_hz': sub_bandlimit_low_hz,
             'sub_bandlimit_high_enabled': sub_bandlimit_high_enabled,
             'sub_bandlimit_high_hz': sub_bandlimit_high_hz,
-            'fc': fc
+            'fc': fc,
+            'fc_for_main': fc_for_main,
+            'fc_sub': fc_sub,
+            'auto_crossover_enabled': auto_crossover_enabled,
+            'is_full_range_mains': is_full_range_mains
         })
 
         return jsonify({'status': 'success', 'message': '\n'.join(console_log)})
@@ -1345,12 +1489,16 @@ def run_phase2():
 
         freqs = APP_STATE['freqs']
         fc = APP_STATE.get('fc', 80.0)
+        fc_for_main = APP_STATE.get('fc_for_main', {m_id: fc for m_id in APP_STATE['mains_ids']})
+        fc_sub = APP_STATE.get('fc_sub', fc)
         crossover_mains = APP_STATE.get('crossover_mains', 'lr4')
         crossover_sub = APP_STATE.get('crossover_sub', 'lr4')
         phase_mains = APP_STATE.get('phase_mains', 'linear')
         phase_sub = APP_STATE.get('phase_sub', 'linear')
         H_vba = APP_STATE['H_vba']
         measurements = APP_STATE['measurements']
+        auto_crossover_enabled = APP_STATE.get('auto_crossover_enabled', False)
+        is_full_range_mains = APP_STATE.get('is_full_range_mains', False)
         
         generated_firs = {}
         
@@ -1358,7 +1506,10 @@ def run_phase2():
         
         for m_id in APP_STATE['mains_ids']:
             final_delay_s = APP_STATE['mains_exact_delays_s'][m_id] + align_mains_s
-            hpf = generate_crossover(freqs, fc, 'highpass', crossover_mains, phase_mains)
+            if auto_crossover_enabled and not is_full_range_mains:
+                hpf = np.ones_like(freqs, dtype=np.complex128)
+            else:
+                hpf = generate_crossover(freqs, fc_for_main.get(m_id, fc), 'highpass', crossover_mains, phase_mains)
             embedded_target_mains = APP_STATE['H_correction_dict'][m_id] * hpf
             mains_firs_complex[m_id] = embedded_target_mains
             generated_firs[m_id] = generate_final_fir(embedded_target_mains, freqs, final_delay_s, log_func=clog)
@@ -1367,7 +1518,7 @@ def run_phase2():
         if lfe_id and APP_STATE.get('H_eq_min_phase') is not None:
             # Automatic Subwoofer Alignment via Group Delay matching
             if auto_sub_alignment and mains_firs_complex:
-                clog(f"\n  -> Optimizing Subwoofer delay to match mains group delay (crossover region: {fc/2:.0f}-{fc*2:.0f} Hz)...")
+                clog(f"\n  -> Optimizing Subwoofer delay to match mains group delay (crossover region: {fc_sub/2:.0f}-{fc_sub*2:.0f} Hz)...")
                 
                 # Fetch raw IRs and generate corrected systems for Mains
                 H_mains_systems = []
@@ -1403,14 +1554,14 @@ def run_phase2():
                 ir_sub_centered = get_centered_ir(ir_sub_cached, is_lfe=True)
                 H_sys_sub_raw = fft.rfft(ir_sub_centered)
                 
-                lpf = generate_crossover(freqs, fc, 'lowpass', crossover_sub, phase_sub)
+                lpf = generate_crossover(freqs, fc_sub, 'lowpass', crossover_sub, phase_sub)
                 embedded_target_sub_base = APP_STATE['H_eq_min_phase'] * lpf * H_vba
                 H_sub_sys_corrected = H_sys_sub_raw * embedded_target_sub_base
                 target_base_sub_delay = APP_STATE['target_base_delay_s'] + APP_STATE['pad_s_sub']
                 
                 # Sub evaluation region: crossover band fc/2 to 2*fc
-                sub_gd_low = fc / 2.0
-                sub_gd_high = fc * 2.0
+                sub_gd_low = fc_sub / 2.0
+                sub_gd_high = fc_sub * 2.0
                 idx_sub_band = (freqs >= sub_gd_low) & (freqs <= sub_gd_high)
                 
                 def gd_match_objective(delta_t_ms):
@@ -1448,7 +1599,7 @@ def run_phase2():
                 align_lfe_s = align_lfe_ms / 1000.0
             
             final_delay_s = APP_STATE['target_base_delay_s'] + APP_STATE['pad_s_sub'] + align_lfe_s
-            lpf = generate_crossover(freqs, fc, 'lowpass', crossover_sub, phase_sub)
+            lpf = generate_crossover(freqs, fc_sub, 'lowpass', crossover_sub, phase_sub)
             embedded_target_sub = APP_STATE['H_eq_min_phase'] * lpf * H_vba
             generated_firs[lfe_id] = generate_final_fir(embedded_target_sub, freqs, final_delay_s, log_func=clog)
 
