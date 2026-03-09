@@ -83,6 +83,13 @@ IMPORTANT: No smoothing should be applied to any of the measurements, messuremen
 
 Once configured, click **"Generate Base FIR"** (Phase 1) followed by the green generation button in Phase 2. The app will produce `.wav` impulse response files for each speaker you processed and a global EQ file for your convolver. You can find these files inside xpdrc's directory. Apply a global negative gain in your system to prevent clipping.
 
+## Known Bugs:
+
+-If you select a subwoofer measurements and bypass the crossovers, the subwoofer rolloff detection is not working correctly in 1.0, resulting in a mangled subwoofer filter
+-Enabling phase corrections but using too low of a target base delay will result in the filters being mangled and unusable, this is not a bug per-se but the user should be warned if values below a certain number could generate bad filters, fix coming soon.
+
+
+
 ## Documentation
 
 For a comprehensive breakdown of exactly how the digital signal processing algorithms function mathematically, please refer to the Documentation page accessible directly within the web interface. The documentation details the default processing pipeline, including frequency dependent windowing, excess phase linearization, and iterative ringing analysis, as well as advanced toggleable features like Mixed Phase design and Kirkeby regularized spectral inversion.
