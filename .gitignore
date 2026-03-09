@@ -7,3 +7,8 @@ xpdrc_config.json
 .vscode/
 .idea/
 .venv/
+*.wav
+*.tmp
+XPDRC_BASE_*.wav
+XPDRC_FILTER_*.wav
+XPDRC_GLOBAL_EQ.wav

@@ -54,6 +54,20 @@ The batch script will automatically:
  
 - Start the application and open the interface in your default browser.
 
+### Manual Installation (All Operating Systems)
+
+XPDRC can be run on any operating system (Windows, macOS, Linux) using the terminal:
+
+1.  Open a terminal or command prompt inside the XPDRC folder.
+2.  Install the dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
+3.  Start the application:
+    ```bash
+    python app.py
+    ```
+
 ## How to use
 
 Once the application is running, it will automatically open in your browser at `http://127.0.0.1:5000`.
@@ -82,13 +96,6 @@ If you prefer manual control, you can:
 IMPORTANT: No smoothing should be applied to any of the measurements, messurements should be made with a timing reference and not messed with inside REW, otherwise the script will throw errors or generate incorrect filters.
 
 Once configured, click **"Generate Base FIR"** (Phase 1) followed by the green generation button in Phase 2. The app will produce `.wav` impulse response files for each speaker you processed and a global EQ file for your convolver. You can find these files inside xpdrc's directory. Apply a global negative gain in your system to prevent clipping.
-
-## Known Bugs:
-
--If you select a subwoofer measurements and bypass the crossovers, the subwoofer rolloff detection is not working correctly in 1.0, resulting in a mangled subwoofer filter
-
--Enabling phase corrections but using too low of a target base delay will result in the filters being mangled and unusable, this is not a bug per-se but the user should be warned if values below a certain number could generate bad filters, fix coming soon.
-
 
 
 ## Documentation

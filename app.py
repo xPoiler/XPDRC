@@ -272,12 +272,25 @@ def get_centered_ir(ir, is_lfe=False):
     N = FILTER_TAPS
     pre_samples = int(0.100 * TARGET_SAMPLE_RATE) if is_lfe else int(0.005 * TARGET_SAMPLE_RATE)
     post_samples = int(0.500 * TARGET_SAMPLE_RATE) if is_lfe else int(0.015 * TARGET_SAMPLE_RATE)
+    
+    # Ensure pre+post doesn't exceed FILTER_TAPS (avoids crash at 192kHz/high sample rates)
+    total_requested = pre_samples + post_samples
+    if total_requested > N:
+        ratio = (N - 1) / total_requested
+        pre_samples = int(pre_samples * ratio)
+        post_samples = int(post_samples * ratio)
+        # Final safety check for integer rounding
+        if pre_samples + post_samples >= N:
+            post_samples = N - pre_samples - 1
+
     ir_padded = np.pad(ir, (pre_samples, post_samples), mode='constant')
     new_peak = peak_idx + pre_samples
     sliced = ir_padded[new_peak - pre_samples:new_peak + post_samples]
     window = signal.windows.tukey(len(sliced), alpha=0.1 if is_lfe else 0.5)
     sliced = sliced * window
+    
     padded = np.zeros(N)
+    # Correctly handle potential indexing for pre/post windows
     padded[-pre_samples:] = sliced[:pre_samples]
     padded[:post_samples] = sliced[pre_samples:]
     return padded
@@ -458,11 +471,11 @@ def mixed_phase_decompose(H_eq_mag, excess_phase, freqs, crossover_hz=500.0):
     
     return H_mixed
 
-def detect_speaker_rolloff(mag_raw, freqs, threshold_db=-10.0):
+def detect_speaker_rolloff(mag_raw, freqs, threshold_db=-10.0, ref_low=200.0, ref_high=2000.0):
     """
     Detects the natural low-end and high-end rolloff frequencies of a speaker
     by finding where the 1/3-octave-smoothed magnitude drops below threshold_db
-    relative to the midband (200–2000 Hz) average.
+    relative to the midband (ref_low–ref_high Hz) average.
     
     Returns (low_rolloff_hz, high_rolloff_hz).
     """
@@ -470,9 +483,9 @@ def detect_speaker_rolloff(mag_raw, freqs, threshold_db=-10.0):
     mag_smoothed = log_smoothed_fast(mag_raw, freqs, fraction=3, variable=False)
     mag_db = 20 * np.log10(np.maximum(mag_smoothed, 1e-12))
     
-    # Midband reference: 200–2000 Hz
-    idx_mid_low = np.argmin(np.abs(freqs - 200.0))
-    idx_mid_high = np.argmin(np.abs(freqs - 2000.0))
+    # Selection of reference band: default 200–2000 Hz, or custom for subs
+    idx_mid_low = np.argmin(np.abs(freqs - ref_low))
+    idx_mid_high = np.argmin(np.abs(freqs - ref_high))
     if idx_mid_high <= idx_mid_low:
         idx_mid_high = idx_mid_low + 1
     midband_level_db = np.mean(mag_db[idx_mid_low:idx_mid_high])
@@ -998,8 +1011,8 @@ def run_phase1():
                     eq_mag = np.clip(eq_mag, 1e-4, 1.122) 
                 
                 if is_full_range_sub:
-                    # Crossover bypass: auto-detect sub rolloff limits
-                    sub_rolloff_low_auto, sub_rolloff_high_auto = detect_speaker_rolloff(np.abs(H_lfe_raw), freqs)
+                    # Crossover bypass: auto-detect sub rolloff limits using a subwoofer-appropriate reference band (30-80 Hz)
+                    sub_rolloff_low_auto, sub_rolloff_high_auto = detect_speaker_rolloff(np.abs(H_lfe_raw), freqs, ref_low=30.0, ref_high=80.0)
                     if sub_low_rolloff_hz > 0:
                         sub_rolloff_low_auto = sub_low_rolloff_hz
                         clog(f"  -> Sub low rolloff override: {sub_rolloff_low_auto:.1f} Hz")
