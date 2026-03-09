@@ -78,7 +78,10 @@ If you prefer manual control, you can:
   
 - Toggle advanced features and change their operation parameters.
 
-Once configured, click **"Generate Base FIR"** (Phase 1) followed by the green generation button in Phase 2. The app will produce `.wav` impulse response files for each speaker you processed and a global EQ file for your convolver. Apply a global negative gain in your system to prevent clipping.
+
+IMPORTANT: No smoothing should be applied to any of the measurements, messurements should be made with a timing reference and not messed with inside REW, otherwise the script will throw errors or generate incorrect filters.
+
+Once configured, click **"Generate Base FIR"** (Phase 1) followed by the green generation button in Phase 2. The app will produce `.wav` impulse response files for each speaker you processed and a global EQ file for your convolver. You can find these files inside xpdrc's directory. Apply a global negative gain in your system to prevent clipping.
 
 ## Documentation
 
