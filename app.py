@@ -814,15 +814,16 @@ def run_phase1():
                 smoothed_excess_phase = log_smoothed_fast(excess_phase, freqs, fraction=3, variable=False)
                 
                 if is_full_range_mains:
-                    # Full-range: extend phase correction down to detected rolloff
-                    phase_low_limit = mains_rolloff_low
+                    # Full-range: extend phase correction down to double the detected rolloff
+                    # Starting at the -10dB point causes too much pre-ringing due to severe phase rotation
+                    phase_low_limit = mains_rolloff_low * 2.0
                     phase_low_fade_start = phase_low_limit * 0.75
                     W = np.zeros_like(freqs)
                     W[freqs >= phase_low_limit] = 1.0
                     transition_idx = (freqs > phase_low_fade_start) & (freqs < phase_low_limit)
                     if np.any(transition_idx):
                         W[transition_idx] = 0.5 * (1 - np.cos(np.pi * (freqs[transition_idx] - phase_low_fade_start) / (phase_low_limit - phase_low_fade_start)))
-                    clog(f"  -> Full-range phase correction: active from {phase_low_limit:.1f} Hz")
+                    clog(f"  -> Full-range phase correction: active from {phase_low_limit:.1f} Hz (rolloff * 2)")
                 else:
                     # Standard: fade out excess phase below crossover (sub handles that region)
                     W = np.zeros_like(freqs)
@@ -850,8 +851,12 @@ def run_phase1():
                         idx_prc = (freqs > fade_start) & (freqs < fade_end)
                         if np.any(idx_prc):
                             W_prc[idx_prc] = 0.5 * (1 + np.cos(np.pi * (freqs[idx_prc] - fade_start) / (fade_end - fade_start)))
-                        target_phase = target_phase * W_prc
-                        clog(f"  -> Applied Preringing Reduction (PRC) above {prc_freq_hz} Hz.")
+                        
+                        # Normalize phase to nearest 2pi at fade start to prevent unwinding/wrapping during fade-to-zero
+                        idx_fs = np.argmin(np.abs(freqs - fade_start))
+                        phase_shift = np.round(target_phase[idx_fs] / (2 * np.pi)) * (2 * np.pi)
+                        target_phase = (target_phase - phase_shift) * W_prc
+                        clog(f"  -> Applied Preringing Reduction (PRC) above {prc_freq_hz} Hz (normalized by {phase_shift/(2*np.pi):.0f}*2pi).")
                         
                     H_lin_phase = np.exp(1j * target_phase)
                     H_candidate = H_eq_flat * H_lin_phase
@@ -895,7 +900,10 @@ def run_phase1():
                                 retry_phase = W_retry * smoothed_excess_phase
                                 target_phase_retry = -retry_phase
                                 if preringing_reduction:
-                                    target_phase_retry = target_phase_retry * W_prc
+                                    # Reuse normalization logic for retry loop
+                                    idx_fs = np.argmin(np.abs(freqs - prc_freq_hz))
+                                    phase_shift = np.round(target_phase_retry[idx_fs] / (2 * np.pi)) * (2 * np.pi)
+                                    target_phase_retry = (target_phase_retry - phase_shift) * W_prc
                                 H_lin_phase = np.exp(1j * target_phase_retry)
                                 H_candidate = H_eq_flat * H_lin_phase
                             else:
