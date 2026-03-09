@@ -106,4 +106,6 @@ For a comprehensive breakdown of exactly how the digital signal processing algor
 
 Please note that XPDRC version 1.0 is currently in Beta. While the core default settings of the  digital signal processing generation pipeline are heavily tested, some features combinations might not work perfectly across all computing environments just yet.
 
+Do note that depending your configuration, ringing artifacts could still be audible, the script does its best to limit it but being automatic and higly dependent on your measurements some of these decisions might be wrong, if this happens adjust parameters or disable phase linearization
+
 If you encounter any anomalies or bugs, or if you simply have questions about how the algorithms work, please feel free to reach out. You can contact me directly at xpoileremmo@gmail.com.
