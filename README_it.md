@@ -93,7 +93,7 @@ Se preferisci il controllo manuale, puoi:
 - Attivare o disattivare funzionalità avanzate e cambiarne i parametri operativi.
 
 
-**IMPORTANTE**: Non deve essere applicato alcuno smoothing alle misurazioni. Le misurazioni devono essere effettuate con un riferimento temporale e non devono essere modificate all'interno di REW, altrimenti lo script restituirà errori o genererà filtri errati.
+**IMPORTANTE**: Le misurazioni devono essere effettuate con un riferimento temporale e non devono essere modificate all'interno di REW (es. cambio manuale dell'offset), altrimenti lo script restituirà errori o genererà filtri errati. Lo smoothing è supportato.
 
 Una volta configurato, clicca su **"Genera FIR Base"** (Fase 1) seguito dal pulsante di generazione verde in Fase 2. L'app produrrà file di risposta all'impulso `.wav` per ogni diffusore elaborato e un file di EQ globale per il tuo convolutore. Puoi trovare questi file all'interno della directory di XPDRC. Applica un guadagno negativo globale nel tuo sistema per prevenire il clipping.
 

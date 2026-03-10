@@ -93,7 +93,7 @@ Si vous préférez un contrôle manuel, vous pouvez :
 - Activer ou désactiver les fonctionnalités avancées et modifier leurs paramètres de fonctionnement.
 
 
-**IMPORTANT** : Aucune égalisation (smoothing) ne doit être appliquée aux mesures. Les mesures doivent être effectuées avec une référence temporelle et ne pas être modifiées dans REW, sinon le script affichera des erreurs ou générera des filtres incorrects.
+**IMPORTANT** : Les mesures doivent être effectuées avec une référence temporelle et ne pas être modifiées dans REW (par exemple, changement manuel d'offset), sinon le script affichera des erreurs ou générera des filtres incorrects. Le lissage (smoothing) est supporté.
 
 Une fois configuré, cliquez sur **"Générer FIR de Base"** (Phase 1) suivi du bouton de génération vert dans la Phase 2. L'application produira des fichiers de réponse impulsionnelle `.wav` pour chaque enceinte traitée et un fichier d'égalisation globale pour votre convolveur. Vous pouvez trouver ces fichiers dans le répertoire de XPDRC. Appliquez un gain négatif global dans votre système pour éviter l'écrêtage.
 

@@ -93,7 +93,7 @@ Wenn Sie die manuelle Steuerung bevorzugen, können Sie:
 - Erweiterte Funktionen ein- und ausschalten und deren Betriebsparameter ändern.
 
 
-**WICHTIG**: Auf keine der Messungen sollte eine Glättung (Smoothing) angewendet werden. Messungen sollten mit einer Zeitreferenz durchgeführt und in REW nicht verändert werden, da das Skript sonst Fehler auswirkt oder fehlerhafte Filter generiert.
+**WICHTIG**: Messungen sollten mit einer Zeitreferenz durchgeführt und in REW nicht verändert werden (z. B. manuelles Versetzen), da das Skript sonst Fehler auswirkt oder fehlerhafte Filter generiert. Glättung (Smoothing) wird unterstützt.
 
 Klicken Sie nach der Konfiguration auf **"Basis-FIR generieren"** (Phase 1), gefolgt von der grünen Generierungsschaltfläche in Phase 2. Die App erstellt `.wav`-Impulsantwortdateien für jeden verarbeiteten Lautsprecher und eine globale EQ-Datei für Ihren Convolver. Sie finden diese Dateien im Verzeichnis von XPDRC. Wenden Sie in Ihrem System eine globale negative Verstärkung an, um Clipping zu vermeiden.
 

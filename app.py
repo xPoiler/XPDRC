@@ -139,36 +139,88 @@ def fetch_ir_data(meas_id):
         raise ValueError(f"Failed to decode Base64: {e}")
 
 def fetch_fr_data(meas_id):
+    """
+    Fetches frequency response data from the REW API.
+    Supports linear and log spacing, Base64 or JSON lists, and multiple key variants.
+    """
     res = requests.get(f"{REW_API_URL}/measurements/{meas_id}/frequency-response")
     if res.status_code != 200:
         raise ValueError(f"API returned {res.status_code} fetching Frequency Response for ID {meas_id}")
+    
     data = res.json()
-    if isinstance(data, dict) and 'magnitude' in data and 'startFreq' in data and 'freqStep' in data:
-        start_freq = float(data['startFreq'])
-        freq_step = float(data['freqStep'])
-        mag_val = data['magnitude']
-        if isinstance(mag_val, str):
-            mags = np.frombuffer(base64.b64decode(mag_val), dtype='>f4').astype(np.float32)
-        else:
-            mags = np.array(mag_val, dtype=np.float32)
-        if 1.0 < freq_step < 1.1: 
-            freqs = start_freq * (freq_step ** np.arange(len(mags)))
-        else:
-            freqs = start_freq + np.arange(len(mags)) * freq_step
-        return freqs.astype(np.float32), mags
+    
+    # --- Format 1: Implicit Frequencies (startFreq + step/ppo) ---
+    # This matches the core REW API 'FrequencyResponse' object structure.
+    # We make it robust by checking for common key variants (singular, plural, smoothed).
+    if isinstance(data, dict) and 'startFreq' in data:
+        mag_key = next((k for k in ['magnitude', 'magnitudes', 'smoothedMagnitude'] if k in data), None)
+        if mag_key:
+            start_freq = float(data['startFreq'])
+            
+            # Use pointsPerOctave (log) or freqStep (linear)
+            if 'freqStep' in data:
+                freq_step = float(data['freqStep'])
+                is_log = 1.0 < freq_step < 1.1
+            elif 'pointsPerOctave' in data or 'ppo' in data:
+                ppo_key = 'pointsPerOctave' if 'pointsPerOctave' in data else 'ppo'
+                freq_step = 2.0**(1.0 / float(data[ppo_key]))
+                is_log = True
+            else:
+                # Default fallback (unlikely, but prevents crash)
+                freq_step = 1.0
+                is_log = False
+
+            mag_val = data[mag_key]
+            if isinstance(mag_val, str):
+                mags = np.frombuffer(base64.b64decode(mag_val), dtype='>f4').astype(np.float32)
+            else:
+                mags = np.array(mag_val, dtype=np.float32)
+            
+            if is_log:
+                freqs = start_freq * (freq_step ** np.arange(len(mags)))
+            else:
+                freqs = start_freq + np.arange(len(mags)) * freq_step
+            return freqs.astype(np.float32), mags
+
+    # --- Format 2: Explicit Frequencies & Magnitudes in a Dictionary ---
+    # e.g. {"frequencies": [...], "magnitudes": [...]} or {"f": "Base64", "m": "Base64"}
     if isinstance(data, dict):
-        freq_key = next((k for k in data.keys() if k.lower() in['freq', 'frequencies', 'freqs', 'f', 'frequency']), None)
-        mag_key = next((k for k in data.keys() if k.lower() in['mag', 'magnitudes', 'mags', 'm', 'magnitude', 'spl']), None)
-        if freq_key and mag_key and isinstance(data[freq_key], list):
-            return np.array(data[freq_key], dtype=np.float32), np.array(data[mag_key], dtype=np.float32)
+        freq_key = next((k for k in data.keys() if k.lower() in ['freq', 'frequencies', 'freqs', 'f', 'frequency']), None)
+        mag_key = next((k for k in data.keys() if k.lower() in ['mag', 'magnitudes', 'mags', 'm', 'magnitude', 'spl', 'smoothedmagnitude']), None)
+        
+        if freq_key and mag_key:
+            f_val = data[freq_key]
+            m_val = data[mag_key]
+            
+            # Handle Base64-encoded arrays inside the keys
+            if isinstance(f_val, str):
+                freqs = np.frombuffer(base64.b64decode(f_val), dtype='>f4').astype(np.float32)
+            else:
+                freqs = np.array(f_val, dtype=np.float32)
+            
+            if isinstance(m_val, str):
+                mags = np.frombuffer(base64.b64decode(m_val), dtype='>f4').astype(np.float32)
+            else:
+                mags = np.array(m_val, dtype=np.float32)
+                
+            return freqs, mags
+
+    # --- Format 3: List of Point Dictionaries ---
+    # e.g. [{"f": 20, "m": 75}, {"f": 21, "m": 76}, ...]
     if isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict):
         freq_key = next((k for k in data[0].keys() if k.lower() in ['freq', 'frequency', 'f']), None)
         mag_key = next((k for k in data[0].keys() if k.lower() in ['mag', 'magnitude', 'm', 'spl']), None)
         if freq_key and mag_key:
             return np.array([pt[freq_key] for pt in data], dtype=np.float32), np.array([pt[mag_key] for pt in data], dtype=np.float32)
+
+    # --- Format 4: List of Lists ---
+    # e.g. [[20, 75], [21, 76], ...]
     if isinstance(data, list) and len(data) > 0 and isinstance(data[0], list) and len(data[0]) >= 2:
         return np.array([pt[0] for pt in data], dtype=np.float32), np.array([pt[1] for pt in data], dtype=np.float32)
-    raise ValueError(f"Unrecognized frequency response format from REW API for ID {meas_id}.")
+
+    # If we reached here, parsing failed. Log keys for debugging.
+    keys = list(data.keys()) if isinstance(data, dict) else f"List (len={len(data)})"
+    raise ValueError(f"Unrecognized frequency response format from REW API for ID {meas_id}. Data keys: {keys}")
 
 def parse_rew_house_curve(b64_str, target_freqs):
     """
