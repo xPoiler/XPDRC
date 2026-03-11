@@ -104,7 +104,7 @@ For a comprehensive breakdown of exactly how the digital signal processing algor
 
 ## Beta Disclaimer and Support
 
-**THIS APP HAS BEEN TESTED ONLY ON REW 5.40 BETA VERSION 116** other version could face issues with filter generation
+**THIS APP HAS BEEN TESTED ONLY ON REW 5.40 BETA VERSION 116 and Version 118** other versions could face issues with filter generation
 
 Please note that XPDRC version 1.1 is currently in Beta. While the core default settings of the  digital signal processing generation pipeline are heavily tested, some features combinations might not work perfectly across all computing environments just yet.
 
