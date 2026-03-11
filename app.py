@@ -1008,7 +1008,7 @@ def run_phase1():
         auto_fdw_enabled = config.get('auto_fdw_enabled', False)
         auto_house_curve_enabled = config.get('auto_house_curve_enabled', False)
         auto_prc_enabled = config.get('auto_prc_enabled', False)
-        auto_transition_enabled = config.get('auto_transition_enabled', False)
+        auto_transition_enabled = config.get('auto_transition_enabled', True)
         
         # Full-range mode detection:
         # Mains are full-range when there's no sub or the mains crossover is bypassed
