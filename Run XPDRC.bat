@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo ==========================================
-echo    XPDRC 1.0 - Automated Launcher
+echo    XPDRC 1.2 - Automated Launcher
 echo ==========================================
 
 :: Check if Python is installed

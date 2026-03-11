@@ -951,7 +951,7 @@ def run_phase1():
         spatial_speakers = config.get('spatial_speakers', {})
         spatial_avg_threshold_db = float(config.get('spatial_avg_threshold_db', 3.0))
         
-        clog("\n=== XPDRC 1.0 (WEB) ===")
+        clog("\n=== XPDRC 1.2 (WEB) ===")
         clog(f"Settings: {TARGET_SAMPLE_RATE}Hz / {FILTER_TAPS} Taps | REW API: {REW_API_URL}")
         clog("Fetching measurements from REW...")
         measurements = get_rew_measurements()
