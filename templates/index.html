@@ -961,7 +961,7 @@
                     </div>
 
                     <div class="form-group" style="flex-direction: row; align-items: center; gap: 15px;">
-                        <div style="flex: 1;">
+                        <div style="flex: 1;" id="manual_fdw_setting">
                             <label data-i18n="mains_fdw_label">Mains FDW Cycles <span class="tooltip">?<span
                                          class="tooltiptext" data-i18n-tip="mains_fdw_tip">The frequency-dependent
                                          window size used to smooth main speaker measurements.</span></span></label>
@@ -973,14 +973,19 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 15px; grid-column: span 2; margin-top: 10px;">
+                        <input type="checkbox" id="auto_transition_enabled">
+                        <label for="auto_transition_enabled" style="margin: 0; font-size: 1.1em; font-weight: 500;" data-i18n="auto_transition_label">Auto-Detect Transition Frequency (Schroeder) <span class="tooltip">?<span class="tooltiptext" data-i18n-tip="auto_transition_tip">Automatically analyzes room resonance variability to find the Schroeder frequency, setting the optimal point to transition from modal (raw) to stochastic (smoothed) EQ.</span></span></label>
+                    </div>
+
+                    <div class="form-group" id="trans_start_group">
                         <label data-i18n="eq_trans_start_label">EQ Transition Band (Start Hz) <span
                                 class="tooltip">?<span class="tooltiptext" data-i18n-tip="eq_trans_start_tip">The lower
                                     frequency defining the transition window for blending smoothed
                                     EQ.</span></span></label>
                         <input type="number" id="trans_start" value="200" step="1">
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="trans_end_group">
                         <label data-i18n="eq_trans_end_label">EQ Transition Band (End Hz) <span class="tooltip">?<span
                                     class="tooltiptext" data-i18n-tip="eq_trans_end_tip">The upper
                                     frequency defining the transition window for blending smoothed
@@ -1706,10 +1711,23 @@
             if (gplWarning) {
                 gplWarning.style.display = gplOn ? 'block' : 'none';
             }
+
+            const autoTrans = document.getElementById('auto_transition_enabled').checked;
+            const transStartPanel = document.getElementById('trans_start_group');
+            const transEndPanel = document.getElementById('trans_end_group');
+            if (transStartPanel) {
+                transStartPanel.style.opacity = autoTrans ? '0.35' : '1';
+                transStartPanel.style.pointerEvents = autoTrans ? 'none' : 'auto';
+            }
+            if (transEndPanel) {
+                transEndPanel.style.opacity = autoTrans ? '0.35' : '1';
+                transEndPanel.style.pointerEvents = autoTrans ? 'none' : 'auto';
+            }
         }
         document.getElementById('auto_house_curve_enabled').addEventListener('change', updateAutoSettingsVisibility);
         document.getElementById('auto_prc_enabled').addEventListener('change', updateAutoSettingsVisibility);
         document.getElementById('auto_fdw_enabled').addEventListener('change', updateAutoSettingsVisibility);
+        document.getElementById('auto_transition_enabled').addEventListener('change', updateAutoSettingsVisibility);
         // Initial call after DOM is ready
         setTimeout(updateAutoSettingsVisibility, 100);
 
@@ -1781,6 +1799,7 @@
                 auto_house_curve_enabled: document.getElementById('auto_house_curve_enabled').checked,
                 auto_prc_enabled: document.getElementById('auto_prc_enabled').checked,
                 auto_fdw_enabled: document.getElementById('auto_fdw_enabled').checked,
+                auto_transition_enabled: document.getElementById('auto_transition_enabled').checked,
                 global_phase_lin_enabled: document.getElementById('global_phase_lin_enabled').checked,
 
                 crossover_mains: document.getElementById('crossover_mains').value,
@@ -1886,6 +1905,8 @@
                     document.getElementById('auto_prc_enabled').dispatchEvent(new Event('change'));
                     document.getElementById('auto_fdw_enabled').checked = data.auto_fdw_enabled || false;
                     document.getElementById('auto_fdw_enabled').dispatchEvent(new Event('change'));
+                    document.getElementById('auto_transition_enabled').checked = data.auto_transition_enabled || false;
+                    document.getElementById('auto_transition_enabled').dispatchEvent(new Event('change'));
 
 
                     document.getElementById('crossover_mains').value = data.crossover_mains || 'lr4';

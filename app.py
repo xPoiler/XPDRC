@@ -757,6 +757,77 @@ def detect_auto_house_curve(H_mains_mags, H_sub_mag, freqs, fc, fs):
     
     return house_boost, slope_start_hz, slope_end_hz
 
+def detect_schroeder_statistical(mag_raw, freqs, fs=48000, min_f=80.0, max_f=600.0, window_oct=0.25):
+    """
+    Detects the Schroeder frequency by analyzing the statistical variance
+    of the magnitude response. Improved version with percentile-based baseline
+    and trend detection to avoid premature floor detection.
+    """
+    mag_db = 20 * np.log10(np.maximum(mag_raw, 1e-12))
+    
+    # Calculate rolling variance in log-spaced windows
+    variances = []
+    test_freqs = []
+    
+    # Scan with finer steps for better trend detection
+    curr_f = min_f
+    while curr_f < max_f:
+        f_low = curr_f / (2**(window_oct/2))
+        f_high = curr_f * (2**(window_oct/2))
+        
+        idx = (freqs >= f_low) & (freqs <= f_high)
+        if np.any(idx) and np.sum(idx) > 3:
+            variances.append(np.std(mag_db[idx]))
+            test_freqs.append(curr_f)
+        
+        curr_f *= 1.03 # 3% step for more resolution
+        
+    if not variances:
+        return 200.0 # Fallback
+        
+    variances = np.array(variances)
+    test_freqs = np.array(test_freqs)
+    
+    # Smooth the variance curve to find the trend
+    v_smooth = log_smoothed_fast(variances, test_freqs, fraction=4)
+    
+    # establish a stochastic baseline: use the 20th percentile 
+    # of the higher frequency region (above 300Hz)
+    high_freq_idx = test_freqs > 300.0
+    if np.any(high_freq_idx):
+        baseline_v = np.percentile(v_smooth[high_freq_idx], 20)
+    else:
+        baseline_v = np.min(v_smooth)
+        
+    # We search from high to low for where the variance consistently rises above 
+    # the baseline by a dynamic threshold (relative to baseline + spread)
+    v_spread = np.std(v_smooth[high_freq_idx]) if np.any(high_freq_idx) else 1.0
+    threshold = baseline_v + max(2.0, v_spread * 2.0)
+    
+    fc_detected = 250.0
+    trend_count = 0
+    required_trend = 3 # Consecutive points above threshold to confirm modal region
+    
+    for i in range(len(v_smooth)-1, 0, -1):
+        if v_smooth[i] > threshold:
+            trend_count += 1
+        else:
+            trend_count = 0
+            
+        if trend_count >= required_trend:
+            # The Schroeder frequency is where it first crossed the threshold 
+            # (which is the i + required_trend index)
+            detected_idx = min(i + required_trend, len(v_smooth)-1)
+            fc_detected = test_freqs[detected_idx]
+            break
+            
+    # Safer fallback: if we still ended up at the floor without a strong trend, 
+    # return a reasonable default for a room (200Hz).
+    if fc_detected <= min_f + 5.0:
+        fc_detected = 200.0
+            
+    return float(np.clip(fc_detected, min_f, 450.0))
+
 def detect_auto_prc_frequency(H_eq_flat, freqs, smoothed_excess_phase, fs, delay_s, 
                                min_freq=100.0, max_freq=5000.0, step=100.0):
     """
@@ -937,6 +1008,7 @@ def run_phase1():
         auto_fdw_enabled = config.get('auto_fdw_enabled', False)
         auto_house_curve_enabled = config.get('auto_house_curve_enabled', False)
         auto_prc_enabled = config.get('auto_prc_enabled', False)
+        auto_transition_enabled = config.get('auto_transition_enabled', False)
         
         # Full-range mode detection:
         # Mains are full-range when there's no sub or the mains crossover is bypassed
@@ -1059,6 +1131,24 @@ def run_phase1():
                 clog(f"  -> Auto FDW: detected {gap_s*1000:.1f}ms reflection gap, set FDW to {fdw_cycles:.1f} cycles")
             except Exception as e:
                 clog(f"  -> Auto FDW failed: {e}. Falling back to manual {fdw_cycles:.1f} cycles.")
+
+        # Auto Transition Detection
+        if auto_transition_enabled and len(mains_ids) > 0:
+            try:
+                # Use the vector average magnitude for more stable detection
+                H_mains_mag_list = []
+                for m_id in mains_ids:
+                    ir_tmp = fetch_ir_data(m_id)
+                    ir_tmp_long = get_centered_ir(ir_tmp, is_lfe=True)
+                    H_mains_mag_list.append(np.abs(fft.rfft(ir_tmp_long)))
+                H_mains_rms_mag = np.sqrt(np.mean(np.array(H_mains_mag_list)**2, axis=0))
+                
+                schroeder_fc = detect_schroeder_statistical(H_mains_rms_mag, freqs, fs=TARGET_SAMPLE_RATE)
+                trans_start = schroeder_fc * 0.8  # transition starts slightly below
+                trans_end = schroeder_fc * 1.5    # ends well above to ensure stochastic region
+                clog(f"  -> Auto Transition: Detected Schroeder Frequency at {schroeder_fc:.1f} Hz. Blending: {trans_start:.0f}Hz - {trans_end:.0f}Hz.")
+            except Exception as e:
+                clog(f"  -> Auto Transition failed: {e}. Falling back to manual {trans_start:.0f}Hz - {trans_end:.0f}Hz.")
 
         clog(f"\n[2] Processing Mains ({fdw_cycles}-Cycle FDW, Phase Linearization)...")
         # Full-range rolloff detection from vector average (before per-speaker loop)
@@ -2180,19 +2270,8 @@ def run_phase2():
                     eq_mag_global = eq_mag_global * W_gl_bll + 1.0 * (1 - W_gl_bll)
                     clog(f"  -> Global EQ: applied Sub Band-Limit Low ({bl_low_hz:.0f} Hz).")
                 
-                # Sub high band-limit: fade EQ to unity above the cutoff
-                if APP_STATE.get('sub_bandlimit_high_enabled', False):
-                    bl_high_hz = APP_STATE.get('sub_bandlimit_high_hz', 150.0)
-                    W_gl_blh = np.ones_like(freqs)
-                    blh_start = bl_high_hz
-                    blh_end = bl_high_hz * 1.4
-                    idx_blh_s = np.argmin(np.abs(freqs - blh_start))
-                    idx_blh_e = np.argmin(np.abs(freqs - blh_end))
-                    if idx_blh_e > idx_blh_s:
-                        W_gl_blh[idx_blh_s:idx_blh_e] = 0.5 * (1 + np.cos(np.pi * (freqs[idx_blh_s:idx_blh_e] - blh_start) / (blh_end - blh_start)))
-                    W_gl_blh[idx_blh_e:] = 0.0
-                    eq_mag_global = eq_mag_global * W_gl_blh + 1.0 * (1 - W_gl_blh)
-                    clog(f"  -> Global EQ: applied Sub Band-Limit High ({bl_high_hz:.0f} Hz).")
+                # Sub high band-limit is ignored for Global EQ because Global EQ must correct the mains high-end.
+                # Only Mains High and Sub Low limits are relevant for a system-wide pass.
             else:
                 clog("  -> Global EQ: frequency limits bypassed (full-range correction).")
             
