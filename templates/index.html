@@ -564,34 +564,7 @@
             <div class="grid">
                 <div class="section">
                     <h3 data-i18n="system_ids_header">System IDs & Crossover</h3>
-                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
-                        <input type="checkbox" id="spatial_avg_enabled">
-                        <label for="spatial_avg_enabled" style="margin: 0; font-size: 1em;"
-                            data-i18n="spatial_avg_label">Advanced Spatial Averaging <span class="tooltip">?<span
-                                    class="tooltiptext" data-i18n-tip="spatial_avg_tip">Weights EQ correction inversely
-                                    to cross-seat measurement variance. Corrects aggressively where all listening
-                                    positions agree, gently where they disagree. Requires multi-position measurements
-                                    per speaker.</span></span></label>
-                    </div>
-                    <div id="spatial_avg_settings" style="display: none; margin-bottom: 15px;">
-                        <div id="spatial_speaker_grid"
-                            style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;"></div>
-                        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                            <button type="button" class="btn-secondary" onclick="addSpatialSpeaker()"
-                                style="font-size: 0.85em; padding: 4px 12px;">+ Add Speaker</button>
-                            <button type="button" class="btn-secondary" onclick="removeSpatialSpeaker()"
-                                style="font-size: 0.85em; padding: 4px 12px;">- Remove Speaker</button>
-                        </div>
-                        <div class="form-group">
-                            <label data-i18n="spatial_threshold_label">Variance Threshold (dB) <span
-                                    class="tooltip">?<span class="tooltiptext"
-                                        data-i18n-tip="spatial_threshold_tip">Standard deviation (dB) at which EQ
-                                        strength drops to 50%. Lower = more conservative (less correction where seats
-                                        disagree).</span></span></label>
-                            <input type="number" id="spatial_avg_threshold_db" value="3.0" step="0.5" min="0.5" max="20"
-                                style="width: 80px;">
-                        </div>
-                    </div>
+
                     <div id="standard_ids_group">
                         <div class="form-group">
                             <label data-i18n="mains_ids_label">Mains REW IDs (comma separated, e.g., 1,2) <span
@@ -691,23 +664,30 @@
 
                 <div class="section">
                     <h3 data-i18n="house_curve_header">House Curve</h3>
-                    <div class="form-group">
-                        <label data-i18n="bass_boost_label">Bass Boost (+dB) <span class="tooltip">?<span
-                                    class="tooltiptext" data-i18n-tip="bass_boost_tip">The maximum decibel
-                                    increase applied to the low-end of your target house curve.</span></span></label>
-                        <input type="number" id="house_boost" value="6" step="0.1">
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px; margin-bottom: 15px;">
+                        <input type="checkbox" id="auto_house_curve_enabled">
+                        <label for="auto_house_curve_enabled" style="margin: 0; font-size: 1em;" data-i18n="auto_house_curve_label">Auto-Detect House Curve <span class="tooltip">?<span class="tooltiptext" data-i18n-tip="auto_house_curve_tip">Automatically analyzes your room's natural bass gain and derives an optimal house curve target. Replaces manual boost and slope settings.</span></span></label>
+                        <span id="auto_house_curve_warning" style="display: none; color: #ffcc00; font-size: 0.85em; font-weight: bold; margin-left: 10px;">Warning: this might not work correctly</span>
                     </div>
-                    <div class="form-group">
-                        <label data-i18n="slope_start_label">Slope Start (Hz) <span class="tooltip">?<span
-                                    class="tooltiptext" data-i18n-tip="slope_start_tip">The frequency where the
-                                    bass boost slope begins to rise.</span></span></label>
-                        <input type="number" id="house_start" value="120">
-                    </div>
-                    <div class="form-group">
-                        <label data-i18n="slope_end_label">Slope End (Hz) <span class="tooltip">?<span
-                                    class="tooltiptext" data-i18n-tip="slope_end_tip">The frequency where the
-                                    bass boost slope reaches its maximum level.</span></span></label>
-                        <input type="number" id="house_end" value="80">
+                    <div id="manual_house_curve_settings">
+                        <div class="form-group" id="house_boost_setting">
+                            <label data-i18n="bass_boost_label">Bass Boost (+dB) <span class="tooltip">?<span
+                                        class="tooltiptext" data-i18n-tip="bass_boost_tip">The maximum decibel
+                                        increase applied to the low-end of your target house curve.</span></span></label>
+                            <input type="number" id="house_boost" value="6" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="slope_start_label">Slope Start (Hz) <span class="tooltip">?<span
+                                        class="tooltiptext" data-i18n-tip="slope_start_tip">The frequency where the
+                                        bass boost slope begins to rise.</span></span></label>
+                            <input type="number" id="house_start" value="120">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="slope_end_label">Slope End (Hz) <span class="tooltip">?<span
+                                        class="tooltiptext" data-i18n-tip="slope_end_tip">The frequency where the
+                                        bass boost slope reaches its maximum level.</span></span></label>
+                            <input type="number" id="house_end" value="80">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label data-i18n="custom_house_curve_label">Custom House Curve (.txt optional) <span
@@ -899,9 +879,13 @@
                     </div>
                     <div class="form-group" id="prc_freq_setting">
                         <label data-i18n="prc_transition_label">PRC Transition (Hz) <span class="tooltip">?<span
-                                    class="tooltiptext" data-i18n-tip="prc_transition_tip">The frequency at
-                                    which the preringing reduction algorithm takes effect.</span></span></label>
+                                     class="tooltiptext" data-i18n-tip="prc_transition_tip">The frequency at
+                                     which the preringing reduction algorithm takes effect.</span></span></label>
                         <input type="number" id="prc_freq_hz" value="1000" step="1">
+                    </div>
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px; margin-bottom: 15px;">
+                        <input type="checkbox" id="auto_prc_enabled" checked>
+                        <label for="auto_prc_enabled" style="margin: 0; font-size: 1em;" data-i18n="auto_prc_label">Auto PRC Frequency <span class="tooltip">?<span class="tooltiptext" data-i18n-tip="auto_prc_tip">Iteratively tests multiple PRC transition frequencies and selects the lowest safe value that keeps pre-ringing artifacts below the audible threshold.</span></span></label>
                     </div>
                     <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
                         <input type="checkbox" id="mixed_phase_enabled">
@@ -968,18 +952,27 @@
                             <option value="131072">131072</option>
                         </select>
                     </div>
-                    <div class="form-group">
+
+                    <div class="form-group" style="grid-column: span 2;">
                         <label data-i18n="rew_api_url_label">REW API URL <span class="tooltip">?<span
                                     class="tooltiptext" data-i18n-tip="rew_api_url_tip">The network address for the
                                     active Room EQ Wizard API server instance.</span></span></label>
                         <input type="text" id="rew_api_url" value="http://localhost:4735">
                     </div>
-                    <div class="form-group">
-                        <label data-i18n="mains_fdw_label">Mains FDW Cycles <span class="tooltip">?<span
-                                    class="tooltiptext" data-i18n-tip="mains_fdw_tip">The frequency-dependent
-                                    window size used to smooth main speaker measurements.</span></span></label>
-                        <input type="number" id="fdw_cycles" value="5.0" step="0.1">
+
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 15px;">
+                        <div style="flex: 1;">
+                            <label data-i18n="mains_fdw_label">Mains FDW Cycles <span class="tooltip">?<span
+                                         class="tooltiptext" data-i18n-tip="mains_fdw_tip">The frequency-dependent
+                                         window size used to smooth main speaker measurements.</span></span></label>
+                            <input type="number" id="fdw_cycles" value="5.0" step="0.1">
+                        </div>
+                        <div style="margin-top: 25px; display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="auto_fdw_enabled" checked>
+                            <label for="auto_fdw_enabled" style="margin: 0; font-size: 0.9em; white-space: nowrap;" data-i18n="auto_fdw_label">Auto FDW</label>
+                        </div>
                     </div>
+
                     <div class="form-group">
                         <label data-i18n="eq_trans_start_label">EQ Transition Band (Start Hz) <span
                                 class="tooltip">?<span class="tooltiptext" data-i18n-tip="eq_trans_start_tip">The lower
@@ -994,32 +987,41 @@
                                     EQ.</span></span></label>
                         <input type="number" id="trans_end" value="300" step="1">
                     </div>
+
                     <div class="form-group">
                         <label data-i18n="mains_max_low_boost_label">Mains Max Low Boost (+dB) <span
                                 class="tooltip">?<span class="tooltiptext" data-i18n-tip="mains_max_low_boost_tip">The
-                                    maximum
-                                    allowed EQ boost for low frequencies on the main speakers.</span></span></label>
+                                    maximum allowed EQ boost for low frequencies.</span></span></label>
                         <input type="number" id="max_boost_low" value="6.0" step="0.1">
                     </div>
                     <div class="form-group">
                         <label data-i18n="mains_max_high_boost_label">Mains Max High Boost (+dB) <span
                                 class="tooltip">?<span class="tooltiptext" data-i18n-tip="mains_max_high_boost_tip">The
-                                    maximum
-                                    allowed EQ boost for high frequencies on the main speakers.</span></span></label>
+                                    maximum allowed EQ boost for high frequencies.</span></span></label>
                         <input type="number" id="max_boost_high" value="6.0" step="0.1">
                     </div>
+
+                    <div class="form-group" style="grid-column: span 2; border-top: 1px solid #333; padding-top: 15px; margin-top: 5px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="checkbox" id="global_phase_lin_enabled">
+                            <label for="global_phase_lin_enabled" style="margin: 0; font-size: 1.1em; font-weight: 500;" data-i18n="global_phase_lin_label">Global Phase Linearization <span class="tooltip">?<span class="tooltiptext" data-i18n-tip="global_phase_lin_tip">Applies broad excess phase inversion to the system's vector sum to linearize phase.</span></span></label>
+                        </div>
+                        <span id="gpl_warning" style="display: none; color: #ffcc00; font-size: 0.85em; font-weight: bold; margin-top: 5px;">⚠️ Warning: this will double the delay for minimal benefit</span>
+                    </div>
+
                     <div class="form-group">
-                        <label data-i18n="sub_target_anchor_label">Sub Target Anchor Percentile <span
-                                class="tooltip">?<span class="tooltiptext" data-i18n-tip="sub_target_anchor_tip">Adjusts
-                                    the
-                                    relative volume target anchor for the subwoofer EQ generation.</span></span></label>
-                        <input type="number" id="sub_percentile" value="15" step="1"
-                            title="Lower = cuts more, anchors lower.">
+                        <label data-i18n="sub_target_anchor_label">Sub Target Anchor % <span
+                                class="tooltip">?<span class="tooltiptext" data-i18n-tip="sub_target_anchor_tip">Adjusts the target anchor for subwoofer EQ.</span></span></label>
+                        <input type="number" id="sub_target_anchor" value="80" min="0" max="100">
                     </div>
                     <div class="form-group">
+                        <label>Sub Percentile Tweak <span class="tooltip">?<span class="tooltiptext">Lower = cuts more, anchors lower. Advanced tweak.</span></span></label>
+                        <input type="number" id="sub_percentile" value="15" step="1">
+                    </div>
+
+                    <div class="form-group" style="grid-column: span 2;">
                         <label data-i18n="global_eq_smoothing_label">Global EQ Smoothing <span class="tooltip">?<span
-                                    class="tooltiptext" data-i18n-tip="global_eq_smoothing_tip">The smoothing
-                                    algorithm applied strictly to the global system EQ pass.</span></span></label>
+                                    class="tooltiptext" data-i18n-tip="global_eq_smoothing_tip">Smoothing applied to the global system pass.</span></span></label>
                         <select id="global_smoothing">
                             <option value="erb" selected>ERB</option>
                             <option value="variable">Variable</option>
@@ -1031,6 +1033,7 @@
                             <option value="1">1/1 Octave</option>
                         </select>
                     </div>
+
                     <div class="form-group" style="grid-column: span 2;">
                         <label data-i18n="vol_match_range_label">Volume Match Range (Low Hz - High Hz) <span
                                 class="tooltip">?<span class="tooltiptext" data-i18n-tip="vol_match_range_tip">The
@@ -1532,76 +1535,11 @@
             updateSubSettingsVisibility();
         });
 
-        document.getElementById('spatial_avg_enabled').addEventListener('change', function (e) {
-            const settings = document.getElementById('spatial_avg_settings');
-            const stdIds = document.getElementById('standard_ids_group');
-            if (e.target.checked) {
-                settings.style.display = 'block';
-                stdIds.style.opacity = '0.35';
-                stdIds.style.pointerEvents = 'none';
-                // Add default speakers if grid is empty
-                if (document.getElementById('spatial_speaker_grid').children.length === 0) {
-                    addSpatialSpeaker('L');
-                    addSpatialSpeaker('R');
-                    addSpatialSpeaker('Sub');
-                }
-            } else {
-                settings.style.display = 'none';
-                stdIds.style.opacity = '1';
-                stdIds.style.pointerEvents = 'auto';
-            }
-            updateVolumeAlignmentVisibility();
-        });
+        document.getElementById('global_phase_lin_enabled').addEventListener('change', updateAutoSettingsVisibility);
 
-        let spatialSpeakerCount = 0;
-        function addSpatialSpeaker(label) {
-            spatialSpeakerCount++;
-            const grid = document.getElementById('spatial_speaker_grid');
-            const row = document.createElement('div');
-            row.className = 'spatial-speaker-row';
-            row.style.cssText = 'display: flex; align-items: center; gap: 8px;';
-            row.dataset.speakerId = spatialSpeakerCount;
-            const defaultLabel = label || 'Speaker ' + spatialSpeakerCount;
-            row.innerHTML = `
-                <input type="text" class="spatial-label" value="${defaultLabel}" style="width: 100px; font-size: 0.9em;" placeholder="Label">
-                <span style="color: #aaa; font-size: 0.85em;">IDs:</span>
-                <input type="text" class="spatial-ids" placeholder="1, 4, 7" style="flex: 1; font-size: 0.9em;">
-            `;
-            grid.appendChild(row);
-        }
 
-        function removeSpatialSpeaker() {
-            const grid = document.getElementById('spatial_speaker_grid');
-            if (grid.children.length > 0) {
-                grid.removeChild(grid.lastChild);
-            }
-        }
 
-        function getSpatialSpeakerData() {
-            const result = {};
-            document.querySelectorAll('.spatial-speaker-row').forEach(row => {
-                const label = row.querySelector('.spatial-label').value.trim();
-                const ids = row.querySelector('.spatial-ids').value.split(',').map(s => s.trim()).filter(Boolean);
-                if (label && ids.length > 0) {
-                    result[label] = ids;
-                }
-            });
-            return result;
-        }
 
-        function setSpatialSpeakerData(data) {
-            const grid = document.getElementById('spatial_speaker_grid');
-            grid.innerHTML = '';
-            spatialSpeakerCount = 0;
-            if (data && typeof data === 'object') {
-                for (const [label, ids] of Object.entries(data)) {
-                    addSpatialSpeaker(label);
-                    const rows = grid.querySelectorAll('.spatial-speaker-row');
-                    const lastRow = rows[rows.length - 1];
-                    lastRow.querySelector('.spatial-ids').value = Array.isArray(ids) ? ids.join(', ') : ids;
-                }
-            }
-        }
 
         // Grey out sub-specific settings when no sub ID is entered
         function updateSubSettingsVisibility() {
@@ -1698,17 +1636,10 @@
         // Grey out volume alignment options until at least two speakers are present
         function updateVolumeAlignmentVisibility() {
             let speakersWithIds = 0;
-            const spatialEnabled = document.getElementById('spatial_avg_enabled').checked;
-
-            if (spatialEnabled) {
-                const spatialData = getSpatialSpeakerData();
-                speakersWithIds = Object.keys(spatialData).length;
-            } else {
-                const mainsRaw = document.getElementById('mains_ids').value;
-                const mains = mainsRaw.split(',').map(s => s.trim()).filter(Boolean);
-                const lfe = document.getElementById('lfe_id').value.trim();
-                speakersWithIds = mains.length + (lfe ? 1 : 0);
-            }
+            const mainsRaw = document.getElementById('mains_ids').value;
+            const mains = mainsRaw.split(',').map(s => s.trim()).filter(Boolean);
+            const lfe = document.getElementById('lfe_id').value.trim();
+            speakersWithIds = mains.length + (lfe ? 1 : 0);
 
             const canAlign = speakersWithIds >= 2;
             const volAlignElements = [
@@ -1740,35 +1671,53 @@
             }
         }
 
+        function updateAutoSettingsVisibility() {
+            const autoHc = document.getElementById('auto_house_curve_enabled').checked;
+            const hcPanel = document.getElementById('manual_house_curve_settings');
+            const hcWarning = document.getElementById('auto_house_curve_warning');
+            if (hcPanel) {
+                hcPanel.style.opacity = autoHc ? '0.35' : '1';
+                hcPanel.style.pointerEvents = autoHc ? 'none' : 'auto';
+            }
+            if (hcWarning) {
+                hcWarning.style.display = autoHc ? 'inline' : 'none';
+            }
+
+            const autoPrc = document.getElementById('auto_prc_enabled').checked;
+            const prcPanel = document.getElementById('prc_freq_setting');
+            if (prcPanel) {
+                // If mixed phase is ON, it's already disabled. Only change if not disabled by mixed phase.
+                const mixedOn = document.getElementById('mixed_phase_enabled').checked;
+                if (!mixedOn) {
+                    prcPanel.style.opacity = autoPrc ? '0.35' : '1';
+                    prcPanel.style.pointerEvents = autoPrc ? 'none' : 'auto';
+                }
+            }
+
+            const autoFdw = document.getElementById('auto_fdw_enabled').checked;
+            const fdwPanel = document.getElementById('manual_fdw_setting');
+            if (fdwPanel) {
+                fdwPanel.style.opacity = autoFdw ? '0.35' : '1';
+                fdwPanel.style.pointerEvents = autoFdw ? 'none' : 'auto';
+            }
+
+            const gplOn = document.getElementById('global_phase_lin_enabled').checked;
+            const gplWarning = document.getElementById('gpl_warning');
+            if (gplWarning) {
+                gplWarning.style.display = gplOn ? 'block' : 'none';
+            }
+        }
+        document.getElementById('auto_house_curve_enabled').addEventListener('change', updateAutoSettingsVisibility);
+        document.getElementById('auto_prc_enabled').addEventListener('change', updateAutoSettingsVisibility);
+        document.getElementById('auto_fdw_enabled').addEventListener('change', updateAutoSettingsVisibility);
+        // Initial call after DOM is ready
+        setTimeout(updateAutoSettingsVisibility, 100);
+
         document.getElementById('mains_ids').addEventListener('input', () => {
             updateDelayInputs();
             updateVolumeAlignmentVisibility();
         });
-        document.getElementById('spatial_avg_enabled').addEventListener('change', updateVolumeAlignmentVisibility);
 
-        // Watch for spatial speaker changes
-        const originalAddSpatial = addSpatialSpeaker;
-        window.addSpatialSpeaker = (label) => {
-            originalAddSpatial(label);
-            const rows = document.querySelectorAll('.spatial-speaker-row');
-            rows[rows.length - 1].querySelector('.spatial-ids').addEventListener('input', updateVolumeAlignmentVisibility);
-            updateVolumeAlignmentVisibility();
-        };
-
-        const originalRemoveSpatial = removeSpatialSpeaker;
-        window.removeSpatialSpeaker = () => {
-            originalRemoveSpatial();
-            updateVolumeAlignmentVisibility();
-        };
-
-        const originalSetSpatial = setSpatialSpeakerData;
-        window.setSpatialSpeakerData = (data) => {
-            originalSetSpatial(data);
-            document.querySelectorAll('.spatial-ids').forEach(input => {
-                input.addEventListener('input', updateVolumeAlignmentVisibility);
-            });
-            updateVolumeAlignmentVisibility();
-        };
 
         updateVolumeAlignmentVisibility(); // Apply on load
 
@@ -1829,9 +1778,11 @@
                 lfe_id: document.getElementById('lfe_id').value.trim(),
                 fc: parseFloat(document.getElementById('fc').value),
                 auto_crossover_enabled: document.getElementById('auto_crossover_enabled').checked,
-                spatial_avg_enabled: document.getElementById('spatial_avg_enabled').checked,
-                spatial_speakers: getSpatialSpeakerData(),
-                spatial_avg_threshold_db: parseFloat(document.getElementById('spatial_avg_threshold_db').value),
+                auto_house_curve_enabled: document.getElementById('auto_house_curve_enabled').checked,
+                auto_prc_enabled: document.getElementById('auto_prc_enabled').checked,
+                auto_fdw_enabled: document.getElementById('auto_fdw_enabled').checked,
+                global_phase_lin_enabled: document.getElementById('global_phase_lin_enabled').checked,
+
                 crossover_mains: document.getElementById('crossover_mains').value,
                 crossover_sub: document.getElementById('crossover_sub').value,
                 phase_mains: document.getElementById('phase_mains').value,
@@ -1929,13 +1880,14 @@
                     document.getElementById('fc').value = data.fc || 80;
                     document.getElementById('auto_crossover_enabled').checked = data.auto_crossover_enabled || false;
                     document.getElementById('auto_crossover_enabled').dispatchEvent(new Event('change'));
+                    document.getElementById('auto_house_curve_enabled').checked = data.auto_house_curve_enabled || false;
+                    document.getElementById('auto_house_curve_enabled').dispatchEvent(new Event('change'));
+                    document.getElementById('auto_prc_enabled').checked = data.auto_prc_enabled || false;
+                    document.getElementById('auto_prc_enabled').dispatchEvent(new Event('change'));
+                    document.getElementById('auto_fdw_enabled').checked = data.auto_fdw_enabled || false;
+                    document.getElementById('auto_fdw_enabled').dispatchEvent(new Event('change'));
 
-                    document.getElementById('spatial_avg_enabled').checked = data.spatial_avg_enabled || false;
-                    if (data.spatial_speakers) {
-                        setSpatialSpeakerData(data.spatial_speakers);
-                    }
-                    document.getElementById('spatial_avg_threshold_db').value = data.spatial_avg_threshold_db || 3.0;
-                    document.getElementById('spatial_avg_enabled').dispatchEvent(new Event('change'));
+
                     document.getElementById('crossover_mains').value = data.crossover_mains || 'lr4';
                     document.getElementById('crossover_sub').value = data.crossover_sub || 'lr4';
                     document.getElementById('phase_mains').value = data.phase_mains || 'linear';
@@ -2018,6 +1970,10 @@
                         document.getElementById('auto_sub_alignment').checked = data.auto_sub_alignment !== undefined ? data.auto_sub_alignment : true;
                         document.getElementById('auto_sub_alignment').dispatchEvent(new Event('change'));
                     }
+                    if (document.getElementById('global_phase_lin_enabled')) {
+                        document.getElementById('global_phase_lin_enabled').checked = data.global_phase_lin_enabled || false;
+                        document.getElementById('global_phase_lin_enabled').dispatchEvent(new Event('change'));
+                    }
                     if (document.getElementById('auto_rew_import')) {
                         document.getElementById('auto_rew_import').checked = data.auto_rew_import !== undefined ? data.auto_rew_import : true;
                         document.getElementById('auto_rew_import').dispatchEvent(new Event('change'));
@@ -2084,7 +2040,8 @@
                         global_eq_apply_freq_limits: document.getElementById('global_eq_apply_freq_limits').checked,
                         auto_target_curve: document.getElementById('auto_target_curve').checked,
                         auto_target_start_hz: parseFloat(document.getElementById('auto_target_start_hz').value),
-                        auto_rew_import: document.getElementById('auto_rew_import') ? document.getElementById('auto_rew_import').checked : true
+                        auto_rew_import: document.getElementById('auto_rew_import') ? document.getElementById('auto_rew_import').checked : true,
+                        global_phase_lin_enabled: document.getElementById('global_phase_lin_enabled').checked
                     })
                 });
                 const data = await res.json();
@@ -2397,17 +2354,7 @@
                 document.getElementById('lfe_id').value = subStr;
             }
 
-            // Also populate spatial averaging fields from raw per-position measurements
-            if (document.getElementById('spatial_avg_enabled').checked) {
-                const spatialData = {};
-                for (const ch of wizState.channels) {
-                    if (wizState.measurements[ch] && wizState.measurements[ch].length > 0) {
-                        spatialData[ch] = wizState.measurements[ch].map(m => String(m.id));
-                    }
-                }
-                setSpatialSpeakerData(spatialData);
-                log("✨ Spatial Averaging: populated per-speaker measurement IDs from wizard data.");
-            }
+
 
             updateSubSettingsVisibility();
             updateVolumeAlignmentVisibility();
@@ -2529,6 +2476,14 @@
                 mains_max_high_boost_tip: "The maximum allowed EQ boost for high frequencies on the main speakers.",
                 sub_target_anchor_label: "Sub Target Anchor Percentile ",
                 sub_target_anchor_tip: "Adjusts the relative volume target anchor for the subwoofer EQ generation.",
+                auto_house_curve_label: "Auto-Detect House Curve ",
+                auto_house_curve_tip: "Automatically analyzes your room's natural bass gain and derives an optimal house curve target. Replaces manual boost and slope settings.",
+                auto_prc_label: "Auto PRC Frequency ",
+                auto_prc_tip: "Iteratively tests multiple PRC transition frequencies and selects the lowest safe value that keeps pre-ringing artifacts below the audible threshold.",
+                auto_fdw_label: "Auto FDW Cycles ",
+                auto_fdw_tip: "Analyzes the time gap between direct sound and the first reflection in your room to automatically set the optimal FDW window length.",
+                global_phase_lin_label: "Global Phase Linearization ",
+                global_phase_lin_tip: "Applies broad excess phase inversion to the system's vector sum (from fc/2 up to the PRC limit) to linearize the overall system response. Cascaded with Global EQ.",
                 global_eq_smoothing_label: "Global EQ Smoothing ",
                 global_eq_smoothing_tip: "The smoothing algorithm applied strictly to the global system EQ pass.",
                 vol_match_range_label: "Volume Match Range (Low Hz - High Hz) ",
@@ -2711,6 +2666,14 @@
                 mains_max_high_boost_tip: "Il boost EQ massimo consentito per le alte frequenze sui diffusori principali.",
                 sub_target_anchor_label: "Percentile Ancoraggio Target Sub ",
                 sub_target_anchor_tip: "Regola l'ancoraggio del target di volume relativo per la generazione dell'EQ del subwoofer.",
+                auto_house_curve_label: "Rilevamento Automatico House Curve ",
+                auto_house_curve_tip: "Analizza automaticamente il guadagno naturale dei bassi della stanza e deriva una curva target ottimale. Sostituisce le impostazioni manuali di boost e pendenza.",
+                auto_prc_label: "Frequenza PRC Automatica ",
+                auto_prc_tip: "Testa iterativamente diverse frequenze di transizione PRC e seleziona il valore sicuro più basso che mantiene gli artefatti di pre-ringing al di sotto della soglia udibile.",
+                auto_fdw_label: "Cicli FDW Automatici ",
+                auto_fdw_tip: "Analizza l'intervallo temporale tra il suono diretto e la prima riflessione nella stanza per impostare automaticamente la lunghezza ottimale della finestra FDW.",
+                global_phase_lin_label: "Linearizzazione Fase Globale ",
+                global_phase_lin_tip: "Applica un'inversione della fase in eccesso alla somma vettoriale del sistema (da fc/2 fino al limite PRC) per linearizzare la risposta complessiva del sistema. Cascata con l'EQ Globale.",
                 global_eq_smoothing_label: "Smussamento EQ Globale ",
                 global_eq_smoothing_tip: "L'algoritmo di smussamento applicato esclusivamente al passaggio dell'EQ di sistema globale.",
                 vol_match_range_label: "Intervallo Corrispondenza Volume (Basso Hz - Alto Hz) ",
@@ -2893,6 +2856,14 @@
                 mains_max_high_boost_tip: "Die maximal zulässige EQ-Anhebung für hohe Frequenzen bei den Hauptlautsprechern.",
                 sub_target_anchor_label: "Sub-Ziel-Ankerperzentil ",
                 sub_target_anchor_tip: "Passt den relativen Lautstärkezielanker für die Subwoofer-EQ-Generierung an.",
+                auto_house_curve_label: "Hauskurve automatisch erkennen ",
+                auto_house_curve_tip: "Analysiert automatisch den natürlichen Bassgewinn Ihres Raums und leitet eine optimale Zielkurve ab. Ersetzt manuelle Boost- und Flankeneinstellungen.",
+                auto_prc_label: "Automatische PRC-Frequenz ",
+                auto_prc_tip: "Testet iterativ mehrere PRC-Übergangsfrequenzen und wählt den niedrigsten sicheren Wert aus, der Pre-Ringing-Artefakte unter der hörbaren Schwelle hält.",
+                auto_fdw_label: "Automatische FDW-Zyklen ",
+                auto_fdw_tip: "Analysiert den Zeitabstand zwischen Direktschall und der ersten Reflexion in Ihrem Raum, um automatisch die optimale FDW-Fensterlänge einzustellen.",
+                global_phase_lin_label: "Globale Phasenlinearisierung ",
+                global_phase_lin_tip: "Wendet eine breite Exzessphasen-Inversion auf die Vektorsumme des Systems an (von fc/2 bis zum PRC-Limit), um den Gesamtfrequenzgang zu linearisieren. Kaskadiert mit Global-EQ.",
                 global_eq_smoothing_label: "Globales EQ-Smoothing ",
                 global_eq_smoothing_tip: "Der Glättungsalgorithmus, der ausschließlich auf den globalen System-EQ-Prüflauf angewendet wird.",
                 vol_match_range_label: "Lautstärkeabgleich-Bereich (Tief Hz - Hoch Hz) ",
@@ -3075,6 +3046,14 @@
                 mains_max_high_boost_tip: "Le boost EQ maximal autorisé pour les hautes fréquences sur les enceintes principales.",
                 sub_target_anchor_label: "Percentile Ancrage Cible Caisson ",
                 sub_target_anchor_tip: "Ajuste l'ancre de volume cible relative pour la génération de l'EQ du caisson.",
+                auto_house_curve_label: "Détection automatique de la courbe cible ",
+                auto_house_curve_tip: "Analyse automatiquement le gain naturel des basses de votre pièce et en déduit une courbe cible optimale. Remplace les réglages manuels de boost et de pente.",
+                auto_prc_label: "Fréquence PRC automatique ",
+                auto_prc_tip: "Teste de manière itérative plusieurs fréquences de transition PRC et sélectionne la valeur de sécurité la plus basse qui maintient les artefacts de pré-ringing sous le seuil audible.",
+                auto_fdw_label: "Cycles FDW automatiques ",
+                auto_fdw_tip: "Analyse l'intervalle de temps entre le son direct et la première réflexion dans votre pièce pour régler automatiquement la longueur optimale de la fenêtre FDW.",
+                global_phase_lin_label: "Linéarisation de Phase Globale ",
+                global_phase_lin_tip: "Applique une inversion de phase excessive large à la somme vectorielle du système (de fc/2 jusqu'à la limite PRC) pour linéariser la réponse globale du système. Cascadé avec l'EQ Global.",
                 global_eq_smoothing_label: "Lissage EQ Global ",
                 global_eq_smoothing_tip: "L'algorithme de lissage appliqué strictement à la passe d'EQ globale du système.",
                 vol_match_range_label: "Plage Correspondance Volume (Bas Hz - Haut Hz) ",

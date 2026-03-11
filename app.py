@@ -604,6 +604,249 @@ def get_crossover_threshold_db(crossover_type):
     else:  # bw, bs
         return -3.0
 
+def detect_reflection_gap(ir, fs, threshold_ratio=0.15):
+    """
+    Detects the time gap between the direct sound peak and the first strong
+    early reflection in an impulse response, using the Hilbert envelope.
+    
+    ir:               raw impulse response array
+    fs:               sample rate
+    threshold_ratio:  fraction of peak envelope amplitude that counts as a
+                      'strong' reflection (default 0.15 = 15% of peak)
+    
+    Returns: gap_seconds (float). Clamped to [0.5ms, 20ms].
+    """
+    from scipy.signal import hilbert as hilbert_transform
+    
+    # Compute analytic signal envelope
+    analytic = hilbert_transform(ir)
+    envelope = np.abs(analytic)
+    
+    # Smooth the envelope to avoid false peaks from noise
+    smooth_samples = max(1, int(0.0005 * fs))  # 0.5ms smoothing kernel
+    kernel = np.ones(smooth_samples) / smooth_samples
+    envelope_smooth = np.convolve(envelope, kernel, mode='same')
+    
+    # Find the direct sound peak
+    peak_idx = np.argmax(envelope_smooth)
+    peak_val = envelope_smooth[peak_idx]
+    
+    if peak_val < 1e-12:
+        return 0.005  # fallback: 5ms
+    
+    # Search forward from peak for the first dip below threshold, then the
+    # next rise above threshold (= first reflection)
+    threshold = peak_val * threshold_ratio
+    
+    # First, find where envelope drops below threshold after the peak
+    found_dip = False
+    dip_idx = peak_idx
+    for i in range(peak_idx + 1, min(len(envelope_smooth), peak_idx + int(0.030 * fs))):
+        if envelope_smooth[i] < threshold:
+            found_dip = True
+            dip_idx = i
+            break
+    
+    if not found_dip:
+        return 0.005  # No clear dip found, fallback
+
+    # Then find where envelope rises back above threshold (= reflection arrival)
+    reflection_idx = dip_idx
+    for i in range(dip_idx, min(len(envelope_smooth), peak_idx + int(0.030 * fs))):
+        if envelope_smooth[i] > threshold:
+            reflection_idx = i
+            break
+    
+    gap_s = (reflection_idx - peak_idx) / fs
+    
+    # Clamp to sensible range
+    return float(np.clip(gap_s, 0.0005, 0.020))
+
+def ir_gap_to_fdw_cycles(gap_s, reference_freq=500.0):
+    """
+    Converts a direct-to-reflection time gap into an optimal FDW cycle count.
+    
+    The FDW window at a given frequency f has a half-length of:
+        t_half = cycles / (2 * f)
+    
+    We want the full window (2 * t_half = cycles / f) to fit within the gap,
+    so:  cycles = gap_s * f
+    
+    We use a reference frequency in the midband where FDW behavior matters most.
+    Result is clamped to [3.0, 10.0].
+    """
+    cycles = gap_s * reference_freq
+    return float(np.clip(cycles, 3.0, 10.0))
+
+def detect_auto_house_curve(H_mains_mags, H_sub_mag, freqs, fc, fs):
+    """
+    Analyzes the average in-room steady-state magnitude to derive psychoacoustically
+    appropriate house curve parameters by measuring the natural room gain slope.
+    
+    H_mains_mags:  list of linear magnitude arrays from each main speaker
+    H_sub_mag:     linear magnitude array from the subwoofer (or None)
+    freqs:         frequency array (Hz)
+    fc:            crossover frequency (Hz)
+    
+    Returns: (house_boost_db, house_start_hz, house_end_hz)
+    """
+    # Build combined in-room magnitude: RMS average of all channels
+    all_mags = list(H_mains_mags)
+    if H_sub_mag is not None:
+        all_mags.append(H_sub_mag)
+    
+    combined_mag = np.sqrt(np.mean(np.array(all_mags)**2, axis=0))
+    combined_mag = np.maximum(combined_mag, 1e-12)
+    
+    # Smooth with 1/3 octave to get the trend, not individual modes
+    combined_db = 20 * np.log10(combined_mag)
+    combined_db_smooth = log_smoothed_fast(combined_db, freqs, fraction=3, variable=False)
+    
+    # Reference level: average in the midband (500-2000 Hz)
+    idx_mid_low = np.argmin(np.abs(freqs - 500.0))
+    idx_mid_high = np.argmin(np.abs(freqs - 2000.0))
+    if idx_mid_high <= idx_mid_low:
+        idx_mid_high = idx_mid_low + 1
+    mid_level_db = np.mean(combined_db_smooth[idx_mid_low:idx_mid_high])
+    
+    # Measure how much louder (or quieter) the bass is relative to midband
+    # Use the 30-80 Hz region as the "deep bass" reference
+    idx_bass_low = np.argmin(np.abs(freqs - 30.0))
+    idx_bass_high = np.argmin(np.abs(freqs - 80.0))
+    if idx_bass_high <= idx_bass_low:
+        idx_bass_high = idx_bass_low + 1
+    bass_level_db = np.mean(combined_db_smooth[idx_bass_low:idx_bass_high])
+    
+    # Natural room gain = how much louder bass is vs. mids
+    natural_room_gain = bass_level_db - mid_level_db
+    
+    # The house curve should follow a psychoacoustically pleasant bass shelf.
+    # Research (Harman, Toole) suggests +3 to +6 dB is optimal for music,
+    # +6 to +10 dB for cinema. We use the measured room gain as a guide
+    # and target a boost that's close to 60-80% of the existing room gain
+    # (the room is already doing some of the work).
+    
+    # If room gain is already high (>8dB), we target less boost (room does the work).
+    # If room gain is low (<3dB), we target more boost (room isn't helping).
+    if natural_room_gain > 8.0:
+        target_boost = max(3.0, natural_room_gain * 0.5)
+    elif natural_room_gain > 4.0:
+        target_boost = max(4.0, natural_room_gain * 0.7)
+    else:
+        target_boost = max(4.0, min(8.0, 6.0 + (3.0 - natural_room_gain) * 0.5))
+    
+    # Clamp to sensible bounds
+    house_boost = float(np.clip(target_boost, 2.0, 12.0))
+    
+    # Find where the room gain slope begins by scanning upward from bass
+    # to find where the level crosses the midband reference
+    slope_start_hz = 120.0  # default
+    for i in range(idx_bass_high, idx_mid_low):
+        if combined_db_smooth[i] <= mid_level_db + 1.0:
+            slope_start_hz = float(freqs[i])
+            break
+    slope_start_hz = float(np.clip(slope_start_hz, 80.0, 300.0))
+    
+    # The slope end (where maximum boost is reached) should be well into the bass
+    # Typically around half the crossover frequency or where bass levels off
+    slope_end_hz = float(np.clip(fc * 0.8, 20.0, 120.0))
+    
+    return house_boost, slope_start_hz, slope_end_hz
+
+def detect_auto_prc_frequency(H_eq_flat, freqs, smoothed_excess_phase, fs, delay_s, 
+                               min_freq=100.0, max_freq=5000.0, step=100.0):
+    """
+    Iteratively tests PRC cutoff frequencies from TOP DOWN to find the 
+    LEAST CONSERVATIVE safe value (highest frequency) that keeps 
+    pre-ringing artifacts below psychoacoustic audibility thresholds.
+    
+    H_eq_flat:              complex EQ spectrum (magnitude + min phase)
+    freqs:                  frequency array
+    smoothed_excess_phase:  the windowed excess phase to correct
+    fs:                     sample rate
+    delay_s:                the FIR delay used for generating test FIRs
+    min_freq:               lowest PRC freq (Hz)
+    max_freq:               highest PRC freq to start searching from (Hz)
+    step:                   frequency step between candidates (Hz)
+    
+    Returns: (best_prc_hz, peak_ratio_db)
+    """
+    def get_audibility_threshold_db(f):
+        # Human ear is less sensitive to slow ringing at low frequencies
+        # and extremely sensitive to high frequency pre-echo.
+        if f <= 200:
+            return -20.0  # 10% peak ratio
+        elif f >= 2000:
+            return -45.0  # 0.5% peak ratio
+        else:
+            # Linear interpolation in dB between 200Hz and 2000Hz
+            # 200 -> -20, 2000 -> -45
+            alpha = (f - 200) / (2000 - 200)
+            return -20.0 + alpha * (-45.0 - (-20.0))
+
+    best_prc_hz = 1000.0  # Safe default if search fails
+    best_db = 0.0
+    
+    # Search from highest frequency DOWNWARDS (least conservative first)
+    candidates = np.arange(max_freq, min_freq - step, -step)
+    
+    for prc_hz in candidates:
+        # Build PRC window
+        W_prc = np.ones_like(freqs)
+        fade_start = prc_hz
+        fade_end = prc_hz * 2.0
+        W_prc[freqs >= fade_end] = 0.0
+        idx_prc = (freqs > fade_start) & (freqs < fade_end)
+        if np.any(idx_prc):
+            W_prc[idx_prc] = 0.5 * (1 + np.cos(np.pi * (freqs[idx_prc] - fade_start) / (fade_end - fade_start)))
+        
+        target_phase = -smoothed_excess_phase
+        # Normalize phase at fade start to prevent wrapping clicks
+        idx_fs = np.argmin(np.abs(freqs - fade_start))
+        phase_shift = np.round(target_phase[idx_fs] / (2 * np.pi)) * (2 * np.pi)
+        target_phase_prc = (target_phase - phase_shift) * W_prc
+        
+        H_lin = np.exp(1j * target_phase_prc)
+        H_candidate = H_eq_flat * H_lin
+        
+        # Generate test FIR
+        test_fir = generate_final_fir(H_candidate, freqs, delay_s, log_func=lambda x: None)
+        
+        # Evaluate peak-based pre-ringing ratio
+        abs_fir = np.abs(test_fir)
+        peak_idx = np.argmax(abs_fir)
+        main_peak = abs_fir[peak_idx]
+        
+        if main_peak < 1e-12:
+            continue
+            
+        # Analysis window: more than 2ms before the peak
+        pre_margin = int(0.002 * fs)
+        pre_window = abs_fir[:max(0, peak_idx - pre_margin)]
+        
+        if len(pre_window) == 0:
+            max_pre_peak = 0.0
+        else:
+            max_pre_peak = np.max(pre_window)
+            
+        ratio = max_pre_peak / main_peak
+        db = 20 * np.log10(ratio) if ratio > 1e-10 else -100.0
+        
+        threshold_db = get_audibility_threshold_db(prc_hz)
+        
+        if db <= threshold_db:
+            # Found the highest frequency that is safe
+            return float(prc_hz), float(db)
+        
+        # Track best relative to its frequency threshold
+        margin = db - threshold_db
+        if 'min_margin' not in locals() or margin < min_margin:
+            min_margin = margin
+            best_prc_hz = prc_hz
+            best_db = db
+            
+    return float(best_prc_hz), float(best_db)
+
 # ==============================================================================
 # FLASK ROUTES
 # ==============================================================================
@@ -686,6 +929,11 @@ def run_phase1():
         sub_low_rolloff_hz = float(config.get('sub_low_rolloff_hz', 0))
         sub_high_rolloff_hz = float(config.get('sub_high_rolloff_hz', 0))
         
+        # New Auto Features
+        auto_fdw_enabled = config.get('auto_fdw_enabled', False)
+        auto_house_curve_enabled = config.get('auto_house_curve_enabled', False)
+        auto_prc_enabled = config.get('auto_prc_enabled', False)
+        
         # Full-range mode detection:
         # Mains are full-range when there's no sub or the mains crossover is bypassed
         is_full_range_mains = (not lfe_id) or (crossover_mains.lower() in ('none', 'bypass'))
@@ -694,7 +942,8 @@ def run_phase1():
         
         auto_align_enabled = config.get('auto_align_enabled', True)
         auto_crossover_enabled = config.get('auto_crossover_enabled', False)
-        spatial_avg_enabled = config.get('spatial_avg_enabled', False)
+        # Advanced spatial averaging is not available on the ui and is disabled purposefully and to ignore it
+        spatial_avg_enabled = False # config.get('spatial_avg_enabled', False)
         spatial_speakers = config.get('spatial_speakers', {})
         spatial_avg_threshold_db = float(config.get('spatial_avg_threshold_db', 3.0))
         
@@ -728,6 +977,21 @@ def run_phase1():
             for m_id in mains_ids:
                 fc_for_main[m_id] = fc
             fc_sub = fc
+        
+        # Store calculated cross-over state for Phase 2
+        APP_STATE['fc'] = fc
+        APP_STATE['delay_ms'] = delay_ms
+        APP_STATE['fc_sub'] = fc_sub
+        APP_STATE['fc_for_main'] = fc_for_main
+        APP_STATE['lfe_id'] = lfe_id
+        APP_STATE['mains_ids'] = mains_ids
+        APP_STATE['is_full_range_mains'] = is_full_range_mains
+        APP_STATE['is_full_range_sub'] = is_full_range_sub
+        APP_STATE['auto_crossover_enabled'] = auto_crossover_enabled
+        APP_STATE['crossover_mains'] = crossover_mains
+        APP_STATE['crossover_sub'] = crossover_sub
+        APP_STATE['phase_mains'] = phase_mains
+        APP_STATE['phase_sub'] = phase_sub
         
         # Step 1: Acoustic Delays
         clog("\n[1] Processing Acoustic Delays...")
@@ -781,11 +1045,22 @@ def run_phase1():
                     clog("  -> Could not auto-detect modes. VBA will be skipped.")
         
         # Step 2: MAINS Processing
+        
+        # Auto FDW cycles detection
+        if auto_fdw_enabled and len(mains_ids) > 0:
+            try:
+                ir_first = fetch_ir_data(mains_ids[0])
+                gap_s = detect_reflection_gap(ir_first, fs=TARGET_SAMPLE_RATE)
+                fdw_cycles = ir_gap_to_fdw_cycles(gap_s)
+                clog(f"  -> Auto FDW: detected {gap_s*1000:.1f}ms reflection gap, set FDW to {fdw_cycles:.1f} cycles")
+            except Exception as e:
+                clog(f"  -> Auto FDW failed: {e}. Falling back to manual {fdw_cycles:.1f} cycles.")
+
         clog(f"\n[2] Processing Mains ({fdw_cycles}-Cycle FDW, Phase Linearization)...")
         # Full-range rolloff detection from vector average (before per-speaker loop)
         mains_rolloff_low = fc / 2.0  # default: same as standard mode
         mains_rolloff_high = 20000.0
-        if is_full_range_mains:
+        if is_full_range_mains or auto_house_curve_enabled:
             # Compute RMS magnitude average of all mains (avoids phase cancellation between misaligned speakers)
             H_mains_mag_list = []
             for m_id in mains_ids:
@@ -793,17 +1068,34 @@ def run_phase1():
                 ir_tmp_long = get_centered_ir(ir_tmp, is_lfe=True)
                 H_mains_mag_list.append(np.abs(fft.rfft(ir_tmp_long)))
             H_mains_rms_mag = np.sqrt(np.mean(np.array(H_mains_mag_list)**2, axis=0))
-            mains_rolloff_low, mains_rolloff_high = detect_speaker_rolloff(H_mains_rms_mag, freqs)
-            if mains_low_rolloff_hz > 0:
-                mains_rolloff_low = mains_low_rolloff_hz
-                clog(f"  -> Mains low rolloff override: {mains_rolloff_low:.1f} Hz")
-            else:
-                clog(f"  -> Auto-detected mains low rolloff at {mains_rolloff_low:.1f} Hz (-10dB, from vector avg of {len(mains_ids)} mains)")
-            if mains_high_rolloff_hz > 0:
-                mains_rolloff_high = mains_high_rolloff_hz
-                clog(f"  -> Mains high rolloff override: {mains_rolloff_high:.1f} Hz")
-            else:
-                clog(f"  -> Auto-detected mains high rolloff at {mains_rolloff_high:.1f} Hz (-10dB, from vector avg of {len(mains_ids)} mains)")
+            
+            if is_full_range_mains:
+                mains_rolloff_low, mains_rolloff_high = detect_speaker_rolloff(H_mains_rms_mag, freqs)
+                if mains_low_rolloff_hz > 0:
+                    mains_rolloff_low = mains_low_rolloff_hz
+                    clog(f"  -> Mains low rolloff override: {mains_rolloff_low:.1f} Hz")
+                else:
+                    clog(f"  -> Auto-detected mains low rolloff at {mains_rolloff_low:.1f} Hz (-10dB, from vector avg of {len(mains_ids)} mains)")
+                if mains_high_rolloff_hz > 0:
+                    mains_rolloff_high = mains_high_rolloff_hz
+                    clog(f"  -> Mains high rolloff override: {mains_rolloff_high:.1f} Hz")
+                else:
+                    clog(f"  -> Auto-detected mains high rolloff at {mains_rolloff_high:.1f} Hz (-10dB, from vector avg of {len(mains_ids)} mains)")
+            
+            if auto_house_curve_enabled:
+                try:
+                    sub_mag = None
+                    if lfe_id:
+                        ir_sub_raw = fetch_ir_data(lfe_id)
+                        ir_sub_l = get_centered_ir(ir_sub_raw, is_lfe=True)
+                        sub_mag = np.abs(fft.rfft(ir_sub_l))
+                    
+                    house_boost, house_start, house_end = detect_auto_house_curve(
+                        H_mains_mag_list, sub_mag, freqs, fc_sub, fs=TARGET_SAMPLE_RATE
+                    )
+                    clog(f"  -> Auto House Curve detected: +{house_boost:.1f} dB (Slope: {house_start:.0f} Hz - {house_end:.0f} Hz)")
+                except Exception as e:
+                    clog(f"  -> Auto House Curve failed: {e}. Falling back to manual parameters.")
 
         H_correction_dict = {}
         H_fdw_dict = {}
@@ -1023,6 +1315,18 @@ def run_phase1():
                 else:
                     target_phase = -smoothed_excess_phase_windowed
                     
+                    if auto_prc_enabled and preringing_reduction:
+                        try:
+                            # Use refined top-down psychoacoustic search
+                            detected_hz, peak_db = detect_auto_prc_frequency(
+                                H_eq_flat, freqs, smoothed_excess_phase_windowed, 
+                                TARGET_SAMPLE_RATE, delay_s=(delay_ms/1000.0)
+                            )
+                            prc_freq_hz = detected_hz
+                            clog(f"  -> Auto PRC: selected {prc_freq_hz:.0f} Hz (max pre-peak: {peak_db:.1f} dB)")
+                        except Exception as e:
+                            clog(f"  -> Auto PRC failed: {e}. Falling back to manual {prc_freq_hz:.0f} Hz.")
+
                     if preringing_reduction:
                         W_prc = np.ones_like(freqs)
                         fade_start = prc_freq_hz
@@ -1900,14 +2204,106 @@ def run_phase2():
             clog(f"  -> Applied {global_smoothing.upper() if global_smoothing in ['erb', 'variable'] else f'1/{global_smoothing} Octave'} smoothing.")
             clog(f"  -> Generated Minimum Phase Global EQ (Unlimited cutting allowed, Max Boost +{max_boost_high}dB).")
             
-            # Build final Global EQ FIR (Time Domain)
-            global_fir = fft.irfft(H_global_min_phase, n=FILTER_TAPS)
+            # Default Global FIR from Minimum Phase magnitude correction
+            H_global_final = H_global_min_phase
             
-            # Apply gentle fade-out to prevent circular convolution noise wrapping
-            fade_out = int(TARGET_SAMPLE_RATE * 0.010)
-            win = np.ones(FILTER_TAPS)
-            win[-fade_out:] = 0.5 * (1 + np.cos(np.pi * np.linspace(0, 1, fade_out)))
-            global_fir *= win
+            # --- Optional Global Phase Linearization ---
+            global_phase_lin_enabled = request.json.get('global_phase_lin_enabled', False)
+            if global_phase_lin_enabled and global_id:
+                clog("\n  -> [Global Phase Linearization] Analyzing system vector sum phase...")
+                try:
+                    # 1. Fetch system IR and zero-phase it for analysis
+                    ir_sys = fetch_ir_data(global_id)
+                    fs = TARGET_SAMPLE_RATE
+                    
+                    # Window: 50ms symmetric Hann centered on peak
+                    # This isolates direct sound response for cleaner phase logic
+                    win_size = int(0.050 * fs)
+                    half_win = win_size // 2
+                    peak_idx = np.argmax(np.abs(ir_sys))
+                    
+                    # Target buffer for Zero Phase analysis (peaking at Sample 0)
+                    ir_centered = np.zeros(FILTER_TAPS)
+                    hann = np.hanning(win_size)
+                    
+                    # Correct circular shift: peak goes to 0, pre-energy to end of buffer
+                    for i in range(win_size):
+                        curr_idx = peak_idx - half_win + i
+                        if 0 <= curr_idx < len(ir_sys):
+                            # Target is peak (at shift=0) goes to index 0
+                            # Pre-peak (shift < 0) goes to indices like FILTER_TAPS - 100
+                            shift = i - half_win
+                            target_idx = shift % FILTER_TAPS
+                            ir_centered[target_idx] = ir_sys[curr_idx] * hann[i]
+                    
+                    H_sys_complex = fft.rfft(ir_centered)
+                    
+                    # 2. Extract excess phase (Zero-Delay)
+                    # Normalize magnitude for stable log calculation
+                    mag_sys = np.maximum(np.abs(H_sys_complex), 1e-12)
+                    cep_sys = fft.irfft(np.log(mag_sys), n=FILTER_TAPS)
+                    lifter = np.zeros(FILTER_TAPS)
+                    lifter[0] = 1
+                    lifter[1:FILTER_TAPS//2] = 2
+                    if FILTER_TAPS % 2 == 0: lifter[FILTER_TAPS//2] = 1
+                    H_min_sys = np.exp(fft.rfft(cep_sys * lifter))
+                    
+                    # Excess phase spectrum (Now purely the rotation, no bulk delay)
+                    H_excess_sys = H_sys_complex / H_min_sys
+                    excess_phase_sys = np.unwrap(np.angle(H_excess_sys))
+                    
+                    # 3. Use top-down detection to find safest broad correction limit on the CORRECTED system
+                    # Range: Crossover/2 to 5000Hz (common HF limit)
+                    start_freq = max(20.0, fc_sub / 2.0)
+                    
+                    # Test baseline: Magnitude-Corrected System (Zero-Phase)
+                    H_test_base = H_sys_complex * H_global_min_phase
+                    
+                    detected_hz, peak_db = detect_auto_prc_frequency(
+                        H_test_base, freqs, excess_phase_sys, fs, 
+                        delay_s=(APP_STATE.get('delay_ms', 0)/1000.0),
+                        min_freq=start_freq, max_freq=5000.0
+                    )
+                    
+                    # 4. Generate phase correction window
+                    W_ph = np.ones_like(freqs)
+                    fade_start = detected_hz
+                    fade_end = detected_hz * 2.0
+                    W_ph[freqs >= fade_end] = 0.0
+                    idx_fade = (freqs > fade_start) & (freqs < fade_end)
+                    if np.any(idx_fade):
+                        W_ph[idx_fade] = 0.5 * (1 + np.cos(np.pi * (freqs[idx_fade] - fade_start) / (fade_end - fade_start)))
+                    
+                    # Low-end fade-in (fc/4 to fc/2)
+                    low_fade_start = start_freq / 2.0
+                    low_fade_end = start_freq
+                    W_ph[freqs <= low_fade_start] = 0.0
+                    idx_low_fade = (freqs > low_fade_start) & (freqs < low_fade_end)
+                    if np.any(idx_low_fade):
+                        W_ph[idx_low_fade] = 0.5 * (1 - np.cos(np.pi * (freqs[idx_low_fade] - low_fade_start) / (low_fade_end - low_fade_start)))
+
+                    # 5. Apply phase correction (Inversion)
+                    # Correct for the system's excess phase within the window
+                    # Normalize phase at the detected fade start frequency
+                    idx_norm = np.argmin(np.abs(freqs - fade_start))
+                    p_norm = np.round(excess_phase_sys[idx_norm] / (2 * np.pi)) * (2 * np.pi)
+                    target_correction = -(excess_phase_sys - p_norm) * W_ph
+                    
+                    H_ph_corr = np.exp(1j * target_correction)
+                    
+                    # 6. Cascade filters: (Min-Phase Magnitude) * (Phase Inversion Spectrum)
+                    H_global_final = H_global_min_phase * H_ph_corr
+                    
+                    clog(f"     ✅ Phase Linearization SUCCESS: {detected_hz:.0f} Hz limit (Pre-ringing: {peak_db:.1f} dB)")
+                    clog(f"     -> Applied correction from {start_freq:.0f}Hz to {detected_hz:.0f}Hz.")
+                except Exception as e:
+                    clog(f"     ⚠️ Phase Linearization FAILED: {e}. Falling back to magnitude-only correction.")
+
+            # Build final Global EQ FIR (Time Domain)
+            # Use generate_final_fir to shift the peak to delay_ms and apply proper windowing
+            # This prevents pre-ringing from wrapping around and warping the magnitude response
+            target_delay_s = APP_STATE.get('delay_ms', 75.0) / 1000.0
+            global_fir = generate_final_fir(H_global_final, freqs, target_delay_s, log_func=clog)
             
             global_fir_normalized = global_fir / np.max(np.abs(global_fir))
             
