@@ -369,8 +369,8 @@ def get_fdw_spectrum(ir_centered, freqs, cycles=5.0, fs=48000):
         H_fdw[k] = np.sum(ir_valid * win * phasor)
     return H_fdw
 
-def generate_final_fir(H_complex, freqs, delay_s, log_func=print):
-    if delay_s < 0.05:
+def generate_final_fir(H_complex, freqs, delay_s, log_func=print, is_lin_phase=True):
+    if is_lin_phase and delay_s < 0.05:
         log_func(f"⚠️  Warning: Final FIR delay ({delay_s*1000:.1f} ms) might be too short to safely house sub-bass linear phase pre-ringing!")
     total_samples = delay_s * TARGET_SAMPLE_RATE
     int_shift = int(np.floor(total_samples))
@@ -379,8 +379,12 @@ def generate_final_fir(H_complex, freqs, delay_s, log_func=print):
     h_time = fft.irfft(H_shifted, n=FILTER_TAPS)
     h_causal = np.roll(h_time, max(0, min(int_shift, FILTER_TAPS-1)))
     asym_win = np.ones(FILTER_TAPS)
-    fade_in = max(2, int(int_shift * 0.1)) 
-    asym_win[:fade_in] = 0.5 * (1 - np.cos(np.pi * np.linspace(0, 1, fade_in)))
+    
+    # Only apply fade-in if we have non-zero padding AND we are in linear phase mode
+    if is_lin_phase and int_shift > 0:
+        fade_in = max(2, int(int_shift * 0.1)) 
+        asym_win[:fade_in] = 0.5 * (1 - np.cos(np.pi * np.linspace(0, 1, fade_in)))
+        
     fade_out = int(TARGET_SAMPLE_RATE * 0.010)
     asym_win[-fade_out:] = 0.5 * (1 + np.cos(np.pi * np.linspace(0, 1, fade_out)))
     return h_causal * asym_win
@@ -2302,8 +2306,12 @@ def run_phase2():
             # Build final Global EQ FIR (Time Domain)
             # Use generate_final_fir to shift the peak to delay_ms and apply proper windowing
             # This prevents pre-ringing from wrapping around and warping the magnitude response
-            target_delay_s = APP_STATE.get('delay_ms', 75.0) / 1000.0
-            global_fir = generate_final_fir(H_global_final, freqs, target_delay_s, log_func=clog)
+            if global_phase_lin_enabled:
+                target_delay_s = APP_STATE.get('delay_ms', 75.0) / 1000.0
+            else:
+                target_delay_s = 0.0
+                
+            global_fir = generate_final_fir(H_global_final, freqs, target_delay_s, log_func=clog, is_lin_phase=global_phase_lin_enabled)
             
             global_fir_normalized = global_fir / np.max(np.abs(global_fir))
             
