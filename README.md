@@ -86,7 +86,7 @@ The easiest way to start is by clicking the **"Run Setup Wizard"** button. This 
 
 If you prefer manual control, you can:
 
-- Enter REW measurement IDs directly.
+- Enter REW measurement IDs directly. (Make sure L is 1 and R is 2)
   
 - Adjust crossover frequencies, house curve boosts, and frequency limits.
   
