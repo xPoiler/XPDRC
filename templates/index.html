@@ -628,15 +628,15 @@
                                     class="tooltiptext" data-i18n-tip="mains_xo_type_tip">The filter topology
                                     and slope applied to the high-pass side of the mains.</span></span></label>
                         <select id="crossover_mains">
-                            <option value="none">None (Bypass)</option>
-                            <option value="lr2">Linkwitz-Riley 12dB/oct</option>
-                            <option value="lr4" selected>Linkwitz-Riley 24dB/oct</option>
-                            <option value="lr8">Linkwitz-Riley 48dB/oct</option>
-                            <option value="bw2">Butterworth 12dB/oct</option>
-                            <option value="bw3">Butterworth 18dB/oct</option>
-                            <option value="bw4">Butterworth 24dB/oct</option>
-                            <option value="bs2">Bessel 12dB/oct</option>
-                            <option value="bs4">Bessel 24dB/oct</option>
+                            <option value="none" data-i18n="xo_none">None (Bypass)</option>
+                            <option value="lr2" data-i18n="xo_lr2">Linkwitz-Riley 12dB/oct</option>
+                            <option value="lr4" selected data-i18n="xo_lr4">Linkwitz-Riley 24dB/oct</option>
+                            <option value="lr8" data-i18n="xo_lr8">Linkwitz-Riley 48dB/oct</option>
+                            <option value="bw2" data-i18n="xo_bw2">Butterworth 12dB/oct</option>
+                            <option value="bw3" data-i18n="xo_bw3">Butterworth 18dB/oct</option>
+                            <option value="bw4" data-i18n="xo_bw4">Butterworth 24dB/oct</option>
+                            <option value="bs2" data-i18n="xo_bs2">Bessel 12dB/oct</option>
+                            <option value="bs4" data-i18n="xo_bs4">Bessel 24dB/oct</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -645,15 +645,15 @@
                                     topology and slope applied to the low-pass side of the
                                     subwoofer.</span></span></label>
                         <select id="crossover_sub">
-                            <option value="none">None (Bypass)</option>
-                            <option value="lr2">Linkwitz-Riley 12dB/oct</option>
-                            <option value="lr4" selected>Linkwitz-Riley 24dB/oct</option>
-                            <option value="lr8">Linkwitz-Riley 48dB/oct</option>
-                            <option value="bw2">Butterworth 12dB/oct</option>
-                            <option value="bw3">Butterworth 18dB/oct</option>
-                            <option value="bw4">Butterworth 24dB/oct</option>
-                            <option value="bs2">Bessel 12dB/oct</option>
-                            <option value="bs4">Bessel 24dB/oct</option>
+                            <option value="none" data-i18n="xo_none">None (Bypass)</option>
+                            <option value="lr2" data-i18n="xo_lr2">Linkwitz-Riley 12dB/oct</option>
+                            <option value="lr4" selected data-i18n="xo_lr4">Linkwitz-Riley 24dB/oct</option>
+                            <option value="lr8" data-i18n="xo_lr8">Linkwitz-Riley 48dB/oct</option>
+                            <option value="bw2" data-i18n="xo_bw2">Butterworth 12dB/oct</option>
+                            <option value="bw3" data-i18n="xo_bw3">Butterworth 18dB/oct</option>
+                            <option value="bw4" data-i18n="xo_bw4">Butterworth 24dB/oct</option>
+                            <option value="bs2" data-i18n="xo_bs2">Bessel 12dB/oct</option>
+                            <option value="bs4" data-i18n="xo_bs4">Bessel 24dB/oct</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -662,8 +662,8 @@
                                     the mains crossover introduces phase shift (minimum) or remains perfectly
                                     phase-aligned (linear).</span></span></label>
                         <select id="phase_mains">
-                            <option value="linear" selected>Linear Phase</option>
-                            <option value="minimum">Minimum Phase</option>
+                            <option value="linear" selected data-i18n="phase_linear">Linear Phase</option>
+                            <option value="minimum" data-i18n="phase_minimum">Minimum Phase</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -672,8 +672,8 @@
                                     whether the sub crossover introduces phase shift (minimum) or remains perfectly
                                     phase-aligned (linear).</span></span></label>
                         <select id="phase_sub">
-                            <option value="linear" selected>Linear Phase</option>
-                            <option value="minimum">Minimum Phase</option>
+                            <option value="linear" selected data-i18n="phase_linear">Linear Phase</option>
+                            <option value="minimum" data-i18n="phase_minimum">Minimum Phase</option>
                         </select>
                     </div>
                 </div>
@@ -951,10 +951,10 @@
                                     class="tooltiptext" data-i18n-tip="sample_rate_tip">The sampling rate of
                                     the generated FIR filters.</span></span></label>
                         <select id="sample_rate">
-                            <option value="44100">44100</option>
-                            <option value="48000" selected>48000</option>
-                            <option value="96000">96000</option>
-                            <option value="192000">192000</option>
+                            <option value="44100" data-i18n="sr_44">44100</option>
+                            <option value="48000" selected data-i18n="sr_48">48000</option>
+                            <option value="96000" data-i18n="sr_96">96000</option>
+                            <option value="192000" data-i18n="sr_192">192000</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -963,9 +963,9 @@
                                     the generated FIR filters; higher values offer more bass
                                     precision.</span></span></label>
                         <select id="filter_taps">
-                            <option value="32768">32768</option>
-                            <option value="65536" selected>65536 (PC/Convolver)</option>
-                            <option value="131072">131072</option>
+                            <option value="32768" data-i18n="taps_32k">32768</option>
+                            <option value="65536" selected data-i18n="taps_64k">65536 (PC/Convolver)</option>
+                            <option value="131072" data-i18n="taps_128k">131072</option>
                         </select>
                     </div>
 
@@ -1169,14 +1169,14 @@
                     <label data-i18n="global_eq_smoothing_label">Global EQ Smoothing <span class="tooltip">?<span
                                 class="tooltiptext" data-i18n-tip="global_eq_smoothing_tip">Smoothing applied to the global system pass.</span></span></label>
                     <select id="global_smoothing">
-                        <option value="erb">ERB</option>
-                        <option value="variable">Variable</option>
-                        <option value="48">1/48 Octave</option>
-                        <option value="24">1/24 Octave</option>
-                        <option value="12">1/12 Octave</option>
-                        <option value="6" selected>1/6 Octave</option>
-                        <option value="3">1/3 Octave</option>
-                        <option value="1">1/1 Octave</option>
+                        <option value="erb" data-i18n="smooth_erb">ERB</option>
+                        <option value="variable" data-i18n="smooth_variable">Variable</option>
+                        <option value="48" data-i18n="smooth_48">1/48 Octave</option>
+                        <option value="24" data-i18n="smooth_24">1/24 Octave</option>
+                        <option value="12" data-i18n="smooth_12">1/12 Octave</option>
+                        <option value="6" selected data-i18n="smooth_6">1/6 Octave</option>
+                        <option value="3" data-i18n="smooth_3">1/3 Octave</option>
+                        <option value="1" data-i18n="smooth_1">1/1 Octave</option>
                     </select>
                 </div>
 
@@ -2578,6 +2578,8 @@
                 auto_house_curve_tip: "Automatically analyzes your room's natural bass gain and derives an optimal house curve target. Replaces manual boost and slope settings.",
                 auto_prc_label: "Auto PRC Frequency ",
                 auto_prc_tip: "Iteratively tests multiple PRC transition frequencies and selects the lowest safe value that keeps pre-ringing artifacts below the audible threshold.",
+                auto_transition_label: "Auto-Detect Transition Frequency (Schroeder) ",
+                auto_transition_tip: "Automatically analyzes room resonance variability to find the Schroeder frequency, setting the optimal point to transition from modal (raw) to stochastic (smoothed) EQ.",
                 auto_fdw_label: "Auto FDW Cycles ",
                 auto_fdw_tip: "Analyzes the time gap between direct sound and the first reflection in your room to automatically set the optimal FDW window length.",
                 global_phase_lin_label: "Global Phase Linearization ",
@@ -2605,6 +2607,8 @@
                 global_id_tip: "The ID of a combined system measurement for generating the final Global EQ layer.",
                 enable_global_eq_label: "Enable Global EQ Generation ",
                 enable_global_eq_tip: "Generates a final overarching EQ filter on top of the individual speaker corrections to perfectly match your target house curve.",
+                global_eq_hybrid_label: "Hybrid Global EQ (Direct Sound Blend) ",
+                global_eq_hybrid_tip: "Blends Steady-State (bass) and Direct Sound (highs) logic for the Global EQ pass, preventing room reflections from smearing high-frequency timbre.",
                 apply_freq_limits_label: "Apply EQ Frequency Limits to Global EQ ",
                 apply_freq_limits_tip: "Applies your 'No Correction Above/Below' cutoff frequencies to the Global EQ layer, forcing the overarching EQ to unity outside those bands.",
                 auto_target_curve_label: "Preserve Speaker Character ",
@@ -2653,7 +2657,33 @@
                 wiz_step4_p3: "You can now review the advanced DSP settings or proceed directly to Phase 1.",
                 wiz_alert_no_meas: "You haven't completed any measurements yet.",
                 wiz_confirm_few_meas: "You have measured fewer than 3 positions. The spatial average will be less accurate. Are you sure you want to finish?",
-                floating_reset: "Reset Defaults"
+                floating_reset: "Reset Defaults",
+                xo_none: "None (Bypass)",
+                xo_lr2: "Linkwitz-Riley 12dB/oct",
+                xo_lr4: "Linkwitz-Riley 24dB/oct",
+                xo_lr8: "Linkwitz-Riley 48dB/oct",
+                xo_bw2: "Butterworth 12dB/oct",
+                xo_bw3: "Butterworth 18dB/oct",
+                xo_bw4: "Butterworth 24dB/oct",
+                xo_bs2: "Bessel 12dB/oct",
+                xo_bs4: "Bessel 24dB/oct",
+                phase_linear: "Linear Phase",
+                phase_minimum: "Minimum Phase",
+                smooth_erb: "ERB",
+                smooth_variable: "Variable",
+                smooth_48: "1/48 Octave",
+                smooth_24: "1/24 Octave",
+                smooth_12: "1/12 Octave",
+                smooth_6: "1/6 Octave",
+                smooth_3: "1/3 Octave",
+                smooth_1: "1/1 Octave",
+                sr_44: "44100",
+                sr_48: "48000",
+                sr_96: "96000",
+                sr_192: "192000",
+                taps_32k: "32768",
+                taps_64k: "65536 (PC/Convolver)",
+                taps_128k: "131072"
             },
             it: {
                 app_title: "XPDRC 1.2 Web DSP",
@@ -2767,6 +2797,8 @@
                 auto_house_curve_tip: "Analizza automaticamente il guadagno naturale dei bassi della stanza e deriva una curva target ottimale. Sostituisce le impostazioni manuali di boost e pendenza.",
                 auto_prc_label: "Frequenza PRC Automatica ",
                 auto_prc_tip: "Testa iterativamente diverse frequenze di transizione PRC e seleziona il valore sicuro più basso che mantiene gli artefatti di pre-ringing al di sotto della soglia udibile.",
+                auto_transition_label: "Rileva Automaticamente Frequenza di Transizione (Schroeder) ",
+                auto_transition_tip: "Analizza automaticamente la variabilità della risonanza ambientale per trovare la frequenza di Schroeder, impostando il punto ottimale per passare dall'EQ modale (grezzo) a quello stocastico (smussato).",
                 auto_fdw_label: "Cicli FDW Automatici ",
                 auto_fdw_tip: "Analizza l'intervallo temporale tra il suono diretto e la prima riflessione nella stanza per impostare automaticamente la lunghezza ottimale della finestra FDW.",
                 global_phase_lin_label: "Linearizzazione Fase Globale ",
@@ -2788,6 +2820,8 @@
                 phase_2_header: "Fase 2: Allineamento Finale ed EQ Globale",
                 phase_2_descr: "Imposta la distanza del subwoofer in millisecondi o lascia che lo script allinei automaticamente il subwoofer per te.",
                 auto_sub_align_label: "Automatizza Allineamento Subwoofer",
+                sub_align_phase: "Migliore Coerenza di Fase (Predefinito)",
+                sub_align_gd: "Abbina Ritardo di Gruppo Mains",
                 manual_sub_delay_label: "Ritardo Manuale Subwoofer applicato in REW (ms) ",
                 manual_sub_delay_tip: "Un offset temporale manuale applicato esclusivamente all'allineamento del ritardo del subwoofer.",
                 auto_rew_import_label: "Auto-Elaborazione Fase 2 in REW (Importa, Moltiplica, Media)",
@@ -2795,9 +2829,11 @@
                 global_id_tip: "L'ID di una misurazione combinata del sistema per generare il livello finale dell'EQ Globale.",
                 enable_global_eq_label: "Abilita Generazione EQ Globale ",
                 enable_global_eq_tip: "Genera un filtro EQ finale complessivo sopra le correzioni dei singoli diffusori per corrispondere perfettamente alla tua curva house target.",
+                global_eq_hybrid_label: "Global EQ Ibrida (Mix Suono Diretto) ",
+                global_eq_hybrid_tip: "Mescola la logica di Stato Stazionario (bassi) e Suono Diretto (alti) per il passaggio dell'EQ Globale, impedendo alle riflessioni della stanza di offuscare il timbro delle alte frequenze.",
                 apply_freq_limits_label: "Applica Limiti Frequenza EQ a EQ Globale ",
                 apply_freq_limits_tip: "Applica le tue frequenze di cutoff 'Nessuna Correzione Sopra/Sotto' al livello dell'EQ Globale, forzando l'EQ complessiva all'unità al di fuori di quelle bande.",
-                auto_target_curve_label: "Preserve Speaker Character ",
+                auto_target_curve_label: "Preserva Carattere Diffusori ",
                 auto_target_curve_tip: "Traccia e si fonde dinamicamente nel roll-off naturale ad alta frequenza dei tuoi specifici diffusori per preservare il loro carattere timbrico innato all'estremità superiore.",
                 auto_target_start_label: "Inizio Auto-Target (Hz) ",
                 auto_target_start_tip: "La frequenza dove inizia la valutazione dinamica della curva target automatica che traccia il diffusore.",
@@ -2843,7 +2879,33 @@
                 wiz_step4_p3: "Ora puoi rivedere le impostazioni DSP avanzate o procedere direttamente alla Fase 1.",
                 wiz_alert_no_meas: "Non hai ancora completato alcuna misurazione.",
                 wiz_confirm_few_meas: "Hai misurato meno di 3 posizioni. La media spaziale sarà meno accurata. Sei sicuro di voler terminare?",
-                floating_reset: "Ripristina Predefiniti"
+                floating_reset: "Ripristina Predefiniti",
+                xo_none: "Nessuno (Bypass)",
+                xo_lr2: "Linkwitz-Riley 12dB/ott",
+                xo_lr4: "Linkwitz-Riley 24dB/ott",
+                xo_lr8: "Linkwitz-Riley 48dB/ott",
+                xo_bw2: "Butterworth 12dB/ott",
+                xo_bw3: "Butterworth 18dB/ott",
+                xo_bw4: "Butterworth 24dB/ott",
+                xo_bs2: "Bessel 12dB/ott",
+                xo_bs4: "Bessel 24dB/ott",
+                phase_linear: "Fase Lineare",
+                phase_minimum: "Fase Minima",
+                smooth_erb: "ERB",
+                smooth_variable: "Variabile",
+                smooth_48: "1/48 Ottava",
+                smooth_24: "1/24 Ottava",
+                smooth_12: "1/12 Ottava",
+                smooth_6: "1/6 Ottava",
+                smooth_3: "1/3 Ottava",
+                smooth_1: "1/1 Ottava",
+                sr_44: "44100",
+                sr_48: "48000",
+                sr_96: "96000",
+                sr_192: "192000",
+                taps_32k: "32768",
+                taps_64k: "65536 (PC/Convolver)",
+                taps_128k: "131072"
             },
             de: {
                 app_title: "XPDRC 1.2 Web DSP",
@@ -2957,6 +3019,8 @@
                 auto_house_curve_tip: "Analysiert automatisch den natürlichen Bassgewinn Ihres Raums und leitet eine optimale Zielkurve ab. Ersetzt manuelle Boost- und Flankeneinstellungen.",
                 auto_prc_label: "Automatische PRC-Frequenz ",
                 auto_prc_tip: "Testet iterativ mehrere PRC-Übergangsfrequenzen und wählt den niedrigsten sicheren Wert aus, der Pre-Ringing-Artefakte unter der hörbaren Schwelle hält.",
+                auto_transition_label: "Übergangsfrequenz automatisch erkennen (Schroeder) ",
+                auto_transition_tip: "Analysiert automatisch die Variabilität der Raumresonanz, um die Schroeder-Frequenz zu finden, und stellt den optimalen Punkt für den Übergang von modaler (roher) zu stochastischer (geglätteter) EQ ein.",
                 auto_fdw_label: "Automatische FDW-Zyklen ",
                 auto_fdw_tip: "Analysiert den Zeitabstand zwischen Direktschall und der ersten Reflexion in Ihrem Raum, um automatisch die optimale FDW-Fensterlänge einzustellen.",
                 global_phase_lin_label: "Globale Phasenlinearisierung ",
@@ -2978,6 +3042,8 @@
                 phase_2_header: "Phase 2: Endgültige Ausrichtung & Global-EQ",
                 phase_2_descr: "Stellen Sie Ihren Subwoofer-Abstand in Millisekunden ein oder lassen Sie das Skript den Subwoofer automatisch für Sie ausrichten.",
                 auto_sub_align_label: "Subwoofer-Ausrichtung automatisieren",
+                sub_align_phase: "Beste Phasenkohärenz (Standard)",
+                sub_align_gd: "Gruppenlaufzeit der Mains anpassen",
                 manual_sub_delay_label: "Manuelle Subwoofer-Verzögerung in REW (ms) ",
                 manual_sub_delay_tip: "Ein manueller Zeitversatz, der ausschließlich auf die Verzögerungsausrichtung des Subwoofers angewendet wird.",
                 auto_rew_import_label: "Phase 2 in REW automatisch verarbeiten (Import, Multiplizieren, Mitteln)",
@@ -2985,9 +3051,11 @@
                 global_id_tip: "Die ID einer kombinierten Systemmessung zur Erstellung der finalen Global-EQ-Ebene.",
                 enable_global_eq_label: "Generierung von Global-EQ aktivieren ",
                 enable_global_eq_tip: "Erzeugt einen finalen, übergreifenden EQ-Filter zusätzlich zu den einzelnen Lautsprecherkorrekturen, um Ihre Zielkurve perfekt zu treffen.",
+                global_eq_hybrid_label: "Hybrid Global-EQ (Direktschall-Mischung) ",
+                global_eq_hybrid_tip: "Mischt Steady-State- (Bass) und Direct-Sound-Logik (Höhen) für den Global-EQ-Durchgang und verhindert, dass Raumreflexionen das Hochfrequenz-Timbre verschmieren.",
                 apply_freq_limits_label: "EQ-Frequenzgrenzen auf Global-EQ anwenden ",
                 apply_freq_limits_tip: "Wendet Ihre 'Keine Korrektur ober- /unterhalb'-Grenzfrequenzen auf die Global-EQ-Ebene an und erzwingt außerhalb dieser Bänder den Gesamtfaktor 1.",
-                auto_target_curve_label: "Preserve Speaker Character ",
+                auto_target_curve_label: "Lautsprechercharakter erhalten ",
                 auto_target_curve_tip: "Verfolgt dynamisch den natürlichen Hochfrequenzabfall Ihrer spezifischen Lautsprecher und blendet darin ein, um deren angeborenen Klangcharakter im oberen Bereich zu erhalten.",
                 auto_target_start_label: "Auto-Zielkurve Beginn (Hz) ",
                 auto_target_start_tip: "Die Frequenz, bei der die dynamische automatische Zielkurvenerkennung beginnt, den Lautsprecher zu verfolgen.",
@@ -3033,7 +3101,33 @@
                 wiz_step4_p3: "Sie können nun die erweiterten DSP-Einstellungen überprüfen oder direkt mit Phase 1 fortfahren.",
                 wiz_alert_no_meas: "Sie haben noch keine Messungen abgeschlossen.",
                 wiz_confirm_few_meas: "Sie haben weniger als 3 Positionen gemessen. Der räumliche Mittelwert wird weniger genau sein. Sind Sie sicher, dass Sie fortfahren wollen?",
-                floating_reset: "Standardwerte wiederherstellen"
+                floating_reset: "Standardwerte wiederherstellen",
+                xo_none: "Keine (Bypass)",
+                xo_lr2: "Linkwitz-Riley 12dB/Okt",
+                xo_lr4: "Linkwitz-Riley 24dB/Okt",
+                xo_lr8: "Linkwitz-Riley 48dB/Okt",
+                xo_bw2: "Butterworth 12dB/Okt",
+                xo_bw3: "Butterworth 18dB/Okt",
+                xo_bw4: "Butterworth 24dB/Okt",
+                xo_bs2: "Bessel 12dB/Okt",
+                xo_bs4: "Bessel 24dB/Okt",
+                phase_linear: "Linearphase",
+                phase_minimum: "Minimalphase",
+                smooth_erb: "ERB",
+                smooth_variable: "Variabel",
+                smooth_48: "1/48 Oktave",
+                smooth_24: "1/24 Oktave",
+                smooth_12: "1/12 Oktave",
+                smooth_6: "1/6 Oktave",
+                smooth_3: "1/3 Oktave",
+                smooth_1: "1/1 Oktave",
+                sr_44: "44100",
+                sr_48: "48000",
+                sr_96: "96000",
+                sr_192: "192000",
+                taps_32k: "32768",
+                taps_64k: "65536 (PC/Convolver)",
+                taps_128k: "131072"
             },
             fr: {
                 app_title: "XPDRC 1.2 Web DSP",
@@ -3147,6 +3241,8 @@
                 auto_house_curve_tip: "Analyse automatiquement le gain naturel des basses de votre pièce et en déduit une courbe cible optimale. Remplace les réglages manuels de boost et de pente.",
                 auto_prc_label: "Fréquence PRC automatique ",
                 auto_prc_tip: "Teste de manière itérative plusieurs fréquences de transition PRC et sélectionne la valeur de sécurité la plus basse qui maintient les artefacts de pré-ringing sous le seuil audible.",
+                auto_transition_label: "Détection automatique de la fréquence de transition (Schroeder) ",
+                auto_transition_tip: "Analyse automatiquement la variabilité de la résonance de la pièce pour trouver la fréquence de Schroeder, définissant le point optimal pour passer de l'égalisation modale (brute) à l'égalisation stochastique (lissée).",
                 auto_fdw_label: "Cycles FDW automatiques ",
                 auto_fdw_tip: "Analyse l'intervalle de temps entre le son direct et la première réflexion dans votre pièce pour régler automatiquement la longueur optimale de la fenêtre FDW.",
                 global_phase_lin_label: "Linéarisation de Phase Globale ",
@@ -3168,6 +3264,8 @@
                 phase_2_header: "Phase 2: Alignement Final & EQ Global",
                 phase_2_descr: "Réglez la distance de votre caisson ou laissez le script aligner automatiquement le caisson pour vous.",
                 auto_sub_align_label: "Automatiser l'Alignement du Caisson",
+                sub_align_phase: "Meilleure Cohérence de Phase (Par défaut)",
+                sub_align_gd: "Faire correspondre le délai de groupe des enceintes",
                 manual_sub_delay_label: "Délai Manuel Caisson appliqué dans REW (ms) ",
                 manual_sub_delay_tip: "Un décalage temporel manuel appliqué strictement à l'alignement du délai du caisson.",
                 auto_rew_import_label: "Auto-Traitement Phase 2 dans REW (Import, Multiplier, Moyenne)",
@@ -3175,9 +3273,11 @@
                 global_id_tip: "L'ID d'une mesure de système combinée pour générer la couche finale d'EQ globale.",
                 enable_global_eq_label: "Activer Génération EQ Globale ",
                 enable_global_eq_tip: "Génère un filtre EQ global final par-dessus les corrections individuelles pour correspondre parfaitement à votre courbe cible.",
+                global_eq_hybrid_label: "EQ Global Hybride (Mélange Son Direct) ",
+                global_eq_hybrid_tip: "Mélange la logique du régime permanent (graves) et du son direct (aigus) pour la passe d'égalisation globale, empêchant les réflexions de la pièce de brouiller le timbre des hautes fréquences.",
                 apply_freq_limits_label: "Appliquer Limites Fréquence EQ à EQ Global ",
                 apply_freq_limits_tip: "Applique vos fréquences de coupure 'Pas de Correction Au-dessus/En-dessous' à la couche d'EQ globale, forçant l'EQ global à l'unité en dehors de ces bandes.",
-                auto_target_curve_label: "Preserve Speaker Character ",
+                auto_target_curve_label: "Préserver le caractère des enceintes ",
                 auto_target_curve_tip: "Suit dynamiquement le rolloff haute fréquence naturel de vos enceintes pour préserver leur caractère timbral inné.",
                 auto_target_start_label: "Début Auto-Cible (Hz) ",
                 auto_target_start_tip: "La fréquence où commence l'évaluation dynamique de la courbe cible automatique.",
@@ -3223,7 +3323,33 @@
                 wiz_step4_p3: "Vous pouvez maintenant réviser les paramètres DSP avancés ou passer directement à la Phase 1.",
                 wiz_alert_no_meas: "Vous n'avez pas encore terminé de mesures.",
                 wiz_confirm_few_meas: "Vous avez mesuré moins de 3 positions. La moyenne spatiale sera moins précise. Êtes-vous sûr de vouloir terminer ?",
-                floating_reset: "Réinitialiser par défaut"
+                floating_reset: "Réinitialiser par défaut",
+                xo_none: "Aucun (Bypass)",
+                xo_lr2: "Linkwitz-Riley 12dB/oct",
+                xo_lr4: "Linkwitz-Riley 24dB/oct",
+                xo_lr8: "Linkwitz-Riley 48dB/oct",
+                xo_bw2: "Butterworth 12dB/oct",
+                xo_bw3: "Butterworth 18dB/oct",
+                xo_bw4: "Butterworth 24dB/oct",
+                xo_bs2: "Bessel 12dB/oct",
+                xo_bs4: "Bessel 24dB/oct",
+                phase_linear: "Phase Linéaire",
+                phase_minimum: "Phase Minimale",
+                smooth_erb: "ERB",
+                smooth_variable: "Variable",
+                smooth_48: "1/48 Octave",
+                smooth_24: "1/24 Octave",
+                smooth_12: "1/12 Octave",
+                smooth_6: "1/6 Octave",
+                smooth_3: "1/3 Octave",
+                smooth_1: "1/1 Octave",
+                sr_44: "44100",
+                sr_48: "48000",
+                sr_96: "96000",
+                sr_192: "192000",
+                taps_32k: "32768",
+                taps_64k: "65536 (PC/Convolver)",
+                taps_128k: "131072"
             }
         };
 
