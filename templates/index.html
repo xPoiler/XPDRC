@@ -205,6 +205,22 @@
             box-shadow: 0 6px 20px rgba(3, 218, 198, 0.4);
         }
 
+        .spinner {
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            border: 3px solid rgba(0,0,0,.3);
+            border-radius: 50%;
+            border-top-color: #000;
+            animation: spin 1s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         .section {
             border: 1px solid var(--border-color);
             background: var(--surface-color-elevated);
@@ -799,7 +815,7 @@
                     </div>
                     <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;"
                         id="direct_sound_vol_align_group">
-                        <input type="checkbox" id="direct_sound_vol_align">
+                        <input type="checkbox" id="direct_sound_vol_align" checked>
                         <label for="direct_sound_vol_align" style="margin: 0; font-size: 1em;"
                             data-i18n="direct_sound_vol_align_label">Direct Sound Volume Alignment <span
                                 class="tooltip">?<span class="tooltiptext"
@@ -1005,15 +1021,6 @@
                                     maximum allowed EQ boost for high frequencies.</span></span></label>
                         <input type="number" id="max_boost_high" value="6.0" step="0.1">
                     </div>
-
-                    <div class="form-group" style="grid-column: span 2; border-top: 1px solid #333; padding-top: 15px; margin-top: 5px;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <input type="checkbox" id="global_phase_lin_enabled">
-                            <label for="global_phase_lin_enabled" style="margin: 0; font-size: 1.1em; font-weight: 500;" data-i18n="global_phase_lin_label">Global Phase Linearization <span class="tooltip">?<span class="tooltiptext" data-i18n-tip="global_phase_lin_tip">Applies broad excess phase inversion to the system's vector sum to linearize phase.</span></span></label>
-                        </div>
-                        <span id="gpl_warning" style="display: none; color: #ffcc00; font-size: 0.85em; font-weight: bold; margin-top: 5px;">⚠️ Warning: this will double the delay for minimal benefit</span>
-                    </div>
-
                     <div class="form-group">
                         <label data-i18n="sub_target_anchor_label">Sub Target Anchor % <span
                                 class="tooltip">?<span class="tooltiptext" data-i18n-tip="sub_target_anchor_tip">Adjusts the target anchor for subwoofer EQ.</span></span></label>
@@ -1022,21 +1029,6 @@
                     <div class="form-group">
                         <label>Sub Percentile Tweak <span class="tooltip">?<span class="tooltiptext">Lower = cuts more, anchors lower. Advanced tweak.</span></span></label>
                         <input type="number" id="sub_percentile" value="15" step="1">
-                    </div>
-
-                    <div class="form-group" style="grid-column: span 2;">
-                        <label data-i18n="global_eq_smoothing_label">Global EQ Smoothing <span class="tooltip">?<span
-                                    class="tooltiptext" data-i18n-tip="global_eq_smoothing_tip">Smoothing applied to the global system pass.</span></span></label>
-                        <select id="global_smoothing">
-                            <option value="erb" selected>ERB</option>
-                            <option value="variable">Variable</option>
-                            <option value="48">1/48 Octave</option>
-                            <option value="24">1/24 Octave</option>
-                            <option value="12">1/12 Octave</option>
-                            <option value="6">1/6 Octave</option>
-                            <option value="3">1/3 Octave</option>
-                            <option value="1">1/1 Octave</option>
-                        </select>
                     </div>
 
                     <div class="form-group" style="grid-column: span 2;">
@@ -1093,7 +1085,7 @@
                 </div>
             </details>
 
-            <button type="button" class="btn-run" onclick="runPhase1()" data-i18n="generate_base_firs_btn">▶ 1. Generate
+            <button type="button" id="btn_phase1" class="btn-run" onclick="runPhase1()" data-i18n="generate_base_firs_btn">▶ 1. Generate
                 Base FIRs</button>
         </form>
 
@@ -1109,8 +1101,11 @@
                     style="flex-direction: row; align-items: center; gap: 10px; grid-column: span 2;">
                     <input type="checkbox" id="auto_sub_alignment" checked>
                     <label for="auto_sub_alignment" style="margin: 0; font-size: 1em;"
-                        data-i18n="auto_sub_align_label">Automate Subwoofer Alignment
-                        (Match Mains Group Delay)</label>
+                        data-i18n="auto_sub_align_label">Automate Subwoofer Alignment</label>
+                    <select id="sub_alignment_mode" style="padding: 5px 10px; font-size: 0.9em; height: auto;">
+                        <option value="phase_coherence" selected data-i18n="sub_align_phase">Best Phase Coherence (Default)</option>
+                        <option value="group_delay" data-i18n="sub_align_gd">Match Mains Group Delay</option>
+                    </select>
                 </div>
                 <div class="form-group" id="manual_sub_delay_setting" style="opacity: 0.5; pointer-events: none;">
                     <label data-i18n="manual_sub_delay_label">Manual Subwoofer Delay applied in REW (ms) <span
@@ -1154,11 +1149,48 @@
                                 Correction Above/Below' cutoff frequencies to the Global EQ layer, forcing the
                                 overarching EQ to unity outside those bands.</span></span></label>
                 </div>
+                <div class="form-group"
+                    style="flex-direction: row; align-items: center; gap: 10px; grid-column: span 2;">
+                    <input type="checkbox" id="global_eq_hybrid_enabled" checked>
+                    <label for="global_eq_hybrid_enabled" style="margin: 0; font-size: 1em;"
+                        data-i18n="global_eq_hybrid_label">Hybrid Global EQ (Direct Sound Blend) <span class="tooltip">?<span class="tooltiptext"
+                                data-i18n-tip="global_eq_hybrid_tip">Blends Steady-State (bass) and Direct Sound (highs) logic for the Global EQ pass, preventing room reflections from smearing high-frequency timbre.</span></span></label>
+                </div>
+                
+                <div class="form-group" style="grid-column: span 2; border-top: 1px solid #333; padding-top: 15px; margin-top: 5px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="global_phase_lin_enabled">
+                        <label for="global_phase_lin_enabled" style="margin: 0; font-size: 1.1em; font-weight: 500;" data-i18n="global_phase_lin_label">Global Phase Linearization <span class="tooltip">?<span class="tooltiptext" data-i18n-tip="global_phase_lin_tip">Applies broad excess phase inversion to the system's vector sum to linearize phase.</span></span></label>
+                    </div>
+                    <span id="gpl_warning" style="display: none; color: #ffcc00; font-size: 0.85em; font-weight: bold; margin-top: 5px;">⚠️ Warning: this will double the delay for minimal benefit</span>
+                </div>
+
+                <div class="form-group" style="grid-column: span 2;">
+                    <label data-i18n="global_eq_smoothing_label">Global EQ Smoothing <span class="tooltip">?<span
+                                class="tooltiptext" data-i18n-tip="global_eq_smoothing_tip">Smoothing applied to the global system pass.</span></span></label>
+                    <select id="global_smoothing">
+                        <option value="erb">ERB</option>
+                        <option value="variable">Variable</option>
+                        <option value="48">1/48 Octave</option>
+                        <option value="24">1/24 Octave</option>
+                        <option value="12">1/12 Octave</option>
+                        <option value="6" selected>1/6 Octave</option>
+                        <option value="3">1/3 Octave</option>
+                        <option value="1">1/1 Octave</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="grid-column: span 2;">
+                    <label data-i18n="global_max_boost_label">Global Max High Boost (+dB) <span
+                            class="tooltip">?<span class="tooltiptext" data-i18n-tip="global_max_boost_tip">The
+                                maximum allowed EQ boost for the master Global EQ pass. Defaults to 0 to prevent excessive headroom consumption.</span></span></label>
+                    <input type="number" id="global_max_boost" value="0.0" step="0.1">
+                </div>
+
                 <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
-                    <input type="checkbox" id="auto_target_curve">
+                    <input type="checkbox" id="auto_target_curve" checked>
                     <label for="auto_target_curve" style="margin: 0; font-size: 1em;"
-                        data-i18n="auto_target_curve_label">Auto-Target Curve (Preserve
-                        Speaker Character) <span class="tooltip">?<span class="tooltiptext"
+                        data-i18n="auto_target_curve_label">Preserve Speaker Character <span class="tooltip">?<span class="tooltiptext"
                                 data-i18n-tip="auto_target_curve_tip">Dynamically tracks and
                                 blends into the natural high frequency roll-off of your specific speakers to preserve
                                 their innate timbral character at the top end.</span></span></label>
@@ -1171,7 +1203,7 @@
                     <input type="number" id="auto_target_start_hz" value="2000" step="10">
                 </div>
             </div>
-            <button type="button" class="btn-run" onclick="runPhase2()" data-i18n="bake_final_firs_btn">▶ 2. Bake Final
+            <button type="button" id="btn_phase2" class="btn-run" onclick="runPhase2()" data-i18n="bake_final_firs_btn">▶ 2. Bake Final
                 FIRs & Global EQ</button>
         </div>
 
@@ -1557,7 +1589,8 @@
                 'phase_mains', 'phase_sub',
                 'sub_eq_enabled', 'sub_gd_eq_enabled',
                 'sub_bandlimit_low_enabled', 'sub_bandlimit_high_enabled',
-                'vba_enabled'
+                'vba_enabled', 'sub_target_anchor', 'sub_percentile',
+                'sub_low_rolloff_hz', 'sub_high_rolloff_hz'
             ];
             subElements.forEach(id => {
                 const el = document.getElementById(id);
@@ -1627,10 +1660,6 @@
                 }
             }
 
-            const manualRolloff = document.getElementById('manual_rolloff_container');
-            if (manualRolloff) {
-                manualRolloff.style.display = hasSub ? 'none' : 'contents';
-            }
         }
         document.getElementById('lfe_id').addEventListener('input', () => {
             updateSubSettingsVisibility();
@@ -1826,6 +1855,7 @@
                 mains_bandlimit_high_enabled: document.getElementById('mains_bandlimit_high_enabled').checked,
                 mains_bandlimit_high_hz: parseFloat(document.getElementById('mains_bandlimit_high_hz').value),
                 global_eq_enabled: document.getElementById('global_eq_enabled').checked,
+                global_eq_hybrid_enabled: document.getElementById('global_eq_hybrid_enabled').checked,
                 preringing_reduction: document.getElementById('preringing_reduction').checked,
                 prc_freq_hz: parseFloat(document.getElementById('prc_freq_hz').value),
                 auto_target_curve: document.getElementById('auto_target_curve') ? document.getElementById('auto_target_curve').checked : false,
@@ -1842,6 +1872,7 @@
                 trans_end: parseFloat(document.getElementById('trans_end').value),
                 max_boost_low: parseFloat(document.getElementById('max_boost_low').value),
                 max_boost_high: parseFloat(document.getElementById('max_boost_high').value),
+                global_max_boost: parseFloat(document.getElementById('global_max_boost').value),
                 sub_percentile: parseFloat(document.getElementById('sub_percentile').value),
                 global_smoothing: document.getElementById('global_smoothing').value,
                 vol_match_low: parseFloat(document.getElementById('vol_match_low').value),
@@ -1941,7 +1972,7 @@
                         document.getElementById('prc_freq_hz').value = data.prc_freq_hz || 1000;
                     }
                     if (document.getElementById('auto_target_curve')) {
-                        document.getElementById('auto_target_curve').checked = data.auto_target_curve !== undefined ? data.auto_target_curve : false;
+                        document.getElementById('auto_target_curve').checked = data.auto_target_curve !== undefined ? data.auto_target_curve : true;
                         document.getElementById('auto_target_start_hz').value = data.auto_target_start_hz || 2000;
                     }
 
@@ -1970,8 +2001,11 @@
                     document.getElementById('trans_end').value = data.trans_end || 300;
                     document.getElementById('max_boost_low').value = data.max_boost_low || 6.0;
                     document.getElementById('max_boost_high').value = data.max_boost_high || 6.0;
+                    if (document.getElementById('global_max_boost')) {
+                        document.getElementById('global_max_boost').value = data.global_max_boost || 0.0;
+                    }
                     document.getElementById('sub_percentile').value = data.sub_percentile || 15;
-                    document.getElementById('global_smoothing').value = data.global_smoothing || "erb";
+                    document.getElementById('global_smoothing').value = data.global_smoothing || "6";
                     document.getElementById('vol_match_low').value = data.vol_match_low || 500;
                     document.getElementById('vol_match_high').value = data.vol_match_high || 2000;
 
@@ -1990,6 +2024,9 @@
                     if (document.getElementById('auto_sub_alignment')) {
                         document.getElementById('auto_sub_alignment').checked = data.auto_sub_alignment !== undefined ? data.auto_sub_alignment : true;
                         document.getElementById('auto_sub_alignment').dispatchEvent(new Event('change'));
+                        if (data.sub_alignment_mode) {
+                            document.getElementById('sub_alignment_mode').value = data.sub_alignment_mode;
+                        }
                     }
                     if (document.getElementById('global_phase_lin_enabled')) {
                         document.getElementById('global_phase_lin_enabled').checked = data.global_phase_lin_enabled || false;
@@ -2025,7 +2062,29 @@
             reader.readAsText(file);
         }
 
+        function setProcessingState(isProcessing) {
+            const btn1 = document.getElementById('btn_phase1');
+            const btn2 = document.getElementById('btn_phase2');
+            const wizardBtn = document.querySelector('button[onclick="startWizard()"]');
+            const importBtn = document.querySelector('button[onclick="document.getElementById(\'file-input\').click()"]');
+            const exportBtn = document.querySelector('button[onclick="exportConfig()"]');
+
+            const buttons = [btn1, btn2, wizardBtn, importBtn, exportBtn];
+            
+            buttons.forEach(btn => {
+                if (btn) {
+                    btn.disabled = isProcessing;
+                    btn.style.opacity = isProcessing ? "0.5" : "1";
+                    btn.style.cursor = isProcessing ? "not-allowed" : "pointer";
+                }
+            });
+        }
+
         async function runPhase1() {
+            const btn = document.getElementById('btn_phase1');
+            const originalText = btn.innerHTML;
+            setProcessingState(true);
+            btn.innerHTML = '<span class="spinner"></span> Generating...';
             log("\n> Starting Phase 1: Processing Base FIRs...");
             try {
                 const res = await fetch('/api/run_phase1', {
@@ -2042,10 +2101,17 @@
                 }
             } catch (err) {
                 log("❌ Network Error: " + err);
+            } finally {
+                setProcessingState(false);
+                btn.innerHTML = originalText;
             }
         }
 
         async function runPhase2() {
+            const btn = document.getElementById('btn_phase2');
+            const originalText = btn.innerHTML;
+            setProcessingState(true);
+            btn.innerHTML = '<span class="spinner"></span> Baking...';
             log("\n> Starting Phase 2: Baking Final FIRs...");
             const align_lfe_ms = parseFloat(document.getElementById('align_lfe_ms').value) || 0.0;
             const global_id = document.getElementById('global_id').value.trim();
@@ -2061,8 +2127,13 @@
                         global_eq_apply_freq_limits: document.getElementById('global_eq_apply_freq_limits').checked,
                         auto_target_curve: document.getElementById('auto_target_curve').checked,
                         auto_target_start_hz: parseFloat(document.getElementById('auto_target_start_hz').value),
+                        auto_sub_alignment: document.getElementById('auto_sub_alignment').checked,
+                        sub_alignment_mode: document.getElementById('sub_alignment_mode').value,
                         auto_rew_import: document.getElementById('auto_rew_import') ? document.getElementById('auto_rew_import').checked : true,
-                        global_phase_lin_enabled: document.getElementById('global_phase_lin_enabled').checked
+                        global_phase_lin_enabled: document.getElementById('global_phase_lin_enabled').checked,
+                        global_eq_hybrid_enabled: document.getElementById('global_eq_hybrid_enabled').checked,
+                        global_smoothing: document.getElementById('global_smoothing').value,
+                        global_max_boost: parseFloat(document.getElementById('global_max_boost').value)
                     })
                 });
                 const data = await res.json();
@@ -2074,6 +2145,9 @@
                 }
             } catch (err) {
                 log("❌ Network Error: " + err);
+            } finally {
+                setProcessingState(false);
+                btn.innerHTML = originalText;
             }
         }
 
@@ -2412,6 +2486,9 @@
                 crossover_freq_tip: "The frequency point where bass is transitioned from mains to the subwoofer.",
                 auto_crossover_label: "Auto detect and apply optimal crossover between mains and sub ",
                 auto_crossover_tip: "Automatically detects the natural rolloff of every speaker and applies a standardized optimal crossover frequency for the entire system. Ensures perfect phase coherence between all mains and the subwoofer.",
+                auto_sub_align_label: "Automate Subwoofer Alignment",
+                sub_align_phase: "Best Phase Coherence (Default)",
+                sub_align_gd: "Match Mains Group Delay",
                 target_delay_label: "Target Base Delay (ms) ",
                 target_delay_tip: "Added baseline delay to anchor the filter generation. Use 75ms+ for best deep bass correction (movies/music). Keep under 50ms for low latency (gaming/desktop use).",
                 mains_xo_type_label: "Mains Crossover Type ",
@@ -2521,7 +2598,6 @@
                 generate_base_firs_btn: "▶ 1. Generate Base FIRs",
                 phase_2_header: "Phase 2: Final Alignment & Global EQ",
                 phase_2_descr: "Set your subwoofer distance in milliseconds or let the script automatically align the subwoofer for you.",
-                auto_sub_align_label: "Automate Subwoofer Alignment (Match Mains Group Delay)",
                 manual_sub_delay_label: "Manual Subwoofer Delay applied in REW (ms) ",
                 manual_sub_delay_tip: "A manual time offset applied strictly to the subwoofer's delay alignment.",
                 auto_rew_import_label: "Auto-Process Phase 2 in REW (Import, Multiply, Average)",
@@ -2531,7 +2607,7 @@
                 enable_global_eq_tip: "Generates a final overarching EQ filter on top of the individual speaker corrections to perfectly match your target house curve.",
                 apply_freq_limits_label: "Apply EQ Frequency Limits to Global EQ ",
                 apply_freq_limits_tip: "Applies your 'No Correction Above/Below' cutoff frequencies to the Global EQ layer, forcing the overarching EQ to unity outside those bands.",
-                auto_target_curve_label: "Auto-Target Curve (Preserve Speaker Character) ",
+                auto_target_curve_label: "Preserve Speaker Character ",
                 auto_target_curve_tip: "Dynamically tracks and blends into the natural high frequency roll-off of your specific speakers to preserve their innate timbral character at the top end.",
                 auto_target_start_label: "Auto-Target Start (Hz) ",
                 auto_target_start_tip: "The frequency where the dynamic automatic target curve evaluation begins tracking the speaker.",
@@ -2711,7 +2787,7 @@
                 generate_base_firs_btn: "▶ 1. Genera FIR Base",
                 phase_2_header: "Fase 2: Allineamento Finale ed EQ Globale",
                 phase_2_descr: "Imposta la distanza del subwoofer in millisecondi o lascia che lo script allinei automaticamente il subwoofer per te.",
-                auto_sub_align_label: "Automatizza Allineamento Subwoofer (Corrispondenza Ritardo di Gruppo Diffusori)",
+                auto_sub_align_label: "Automatizza Allineamento Subwoofer",
                 manual_sub_delay_label: "Ritardo Manuale Subwoofer applicato in REW (ms) ",
                 manual_sub_delay_tip: "Un offset temporale manuale applicato esclusivamente all'allineamento del ritardo del subwoofer.",
                 auto_rew_import_label: "Auto-Elaborazione Fase 2 in REW (Importa, Moltiplica, Media)",
@@ -2721,7 +2797,7 @@
                 enable_global_eq_tip: "Genera un filtro EQ finale complessivo sopra le correzioni dei singoli diffusori per corrispondere perfettamente alla tua curva house target.",
                 apply_freq_limits_label: "Applica Limiti Frequenza EQ a EQ Globale ",
                 apply_freq_limits_tip: "Applica le tue frequenze di cutoff 'Nessuna Correzione Sopra/Sotto' al livello dell'EQ Globale, forzando l'EQ complessiva all'unità al di fuori di quelle bande.",
-                auto_target_curve_label: "Curva Auto-Target (Preserva il Carattere dei Diffusori) ",
+                auto_target_curve_label: "Preserve Speaker Character ",
                 auto_target_curve_tip: "Traccia e si fonde dinamicamente nel roll-off naturale ad alta frequenza dei tuoi specifici diffusori per preservare il loro carattere timbrico innato all'estremità superiore.",
                 auto_target_start_label: "Inizio Auto-Target (Hz) ",
                 auto_target_start_tip: "La frequenza dove inizia la valutazione dinamica della curva target automatica che traccia il diffusore.",
@@ -2901,7 +2977,7 @@
                 generate_base_firs_btn: "▶ 1. Basis-FIRs generieren",
                 phase_2_header: "Phase 2: Endgültige Ausrichtung & Global-EQ",
                 phase_2_descr: "Stellen Sie Ihren Subwoofer-Abstand in Millisekunden ein oder lassen Sie das Skript den Subwoofer automatisch für Sie ausrichten.",
-                auto_sub_align_label: "Subwoofer-Ausrichtung automatisieren (Gruppenlaufzeit an Mauptlautsprecher anpassen)",
+                auto_sub_align_label: "Subwoofer-Ausrichtung automatisieren",
                 manual_sub_delay_label: "Manuelle Subwoofer-Verzögerung in REW (ms) ",
                 manual_sub_delay_tip: "Ein manueller Zeitversatz, der ausschließlich auf die Verzögerungsausrichtung des Subwoofers angewendet wird.",
                 auto_rew_import_label: "Phase 2 in REW automatisch verarbeiten (Import, Multiplizieren, Mitteln)",
@@ -2911,7 +2987,7 @@
                 enable_global_eq_tip: "Erzeugt einen finalen, übergreifenden EQ-Filter zusätzlich zu den einzelnen Lautsprecherkorrekturen, um Ihre Zielkurve perfekt zu treffen.",
                 apply_freq_limits_label: "EQ-Frequenzgrenzen auf Global-EQ anwenden ",
                 apply_freq_limits_tip: "Wendet Ihre 'Keine Korrektur ober- /unterhalb'-Grenzfrequenzen auf die Global-EQ-Ebene an und erzwingt außerhalb dieser Bänder den Gesamtfaktor 1.",
-                auto_target_curve_label: "Auto-Zielkurve (Lautsprechercharakter erhalten) ",
+                auto_target_curve_label: "Preserve Speaker Character ",
                 auto_target_curve_tip: "Verfolgt dynamisch den natürlichen Hochfrequenzabfall Ihrer spezifischen Lautsprecher und blendet darin ein, um deren angeborenen Klangcharakter im oberen Bereich zu erhalten.",
                 auto_target_start_label: "Auto-Zielkurve Beginn (Hz) ",
                 auto_target_start_tip: "Die Frequenz, bei der die dynamische automatische Zielkurvenerkennung beginnt, den Lautsprecher zu verfolgen.",
@@ -3091,7 +3167,7 @@
                 generate_base_firs_btn: "▶ 1. Générer FIRs de Base",
                 phase_2_header: "Phase 2: Alignement Final & EQ Global",
                 phase_2_descr: "Réglez la distance de votre caisson ou laissez le script aligner automatiquement le caisson pour vous.",
-                auto_sub_align_label: "Automatiser l'Alignement du Caisson (Match Mains Group Delay)",
+                auto_sub_align_label: "Automatiser l'Alignement du Caisson",
                 manual_sub_delay_label: "Délai Manuel Caisson appliqué dans REW (ms) ",
                 manual_sub_delay_tip: "Un décalage temporel manuel appliqué strictement à l'alignement du délai du caisson.",
                 auto_rew_import_label: "Auto-Traitement Phase 2 dans REW (Import, Multiplier, Moyenne)",
@@ -3101,7 +3177,7 @@
                 enable_global_eq_tip: "Génère un filtre EQ global final par-dessus les corrections individuelles pour correspondre parfaitement à votre courbe cible.",
                 apply_freq_limits_label: "Appliquer Limites Fréquence EQ à EQ Global ",
                 apply_freq_limits_tip: "Applique vos fréquences de coupure 'Pas de Correction Au-dessus/En-dessous' à la couche d'EQ globale, forçant l'EQ global à l'unité en dehors de ces bandes.",
-                auto_target_curve_label: "Courbe Auto-Cible (Préserver le Caractère des Enceintes) ",
+                auto_target_curve_label: "Preserve Speaker Character ",
                 auto_target_curve_tip: "Suit dynamiquement le rolloff haute fréquence naturel de vos enceintes pour préserver leur caractère timbral inné.",
                 auto_target_start_label: "Début Auto-Cible (Hz) ",
                 auto_target_start_tip: "La fréquence où commence l'évaluation dynamique de la courbe cible automatique.",

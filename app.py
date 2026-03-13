@@ -83,16 +83,18 @@ def detect_room_modes(freqs, mag_raw, min_freq=20.0, max_freq=120.0, max_modes=3
     mag_db = 20 * np.log10(np.maximum(mag_smoothed, 1e-12))
     df = freqs[1] - freqs[0]
     if df <= 0: return[]
+    # Lower prominence to 2.5dB to catch fundamentals that might be suppressed at mic position
     dist_bins = max(1, int(5.0 / df))
-    peaks, properties = signal.find_peaks(mag_db, prominence=4.0, distance=dist_bins)
+    peaks, properties = signal.find_peaks(mag_db, prominence=2.5, distance=dist_bins)
     valid_peaks =[]
     for i, p in enumerate(peaks):
         if min_freq <= freqs[p] <= max_freq:
             valid_peaks.append((freqs[p], properties['prominences'][i]))
-    valid_peaks.sort(key=lambda x: x[1], reverse=True)
-    top_modes = valid_peaks[:max_modes]
-    top_modes.sort(key=lambda x: x[0])
-    return top_modes
+    # Sort by frequency to find fundamentals (Length > Width > Height)
+    valid_peaks.sort(key=lambda x: x[0])
+    
+    # Return the first max_modes that sit at the lowest frequencies
+    return valid_peaks[:max_modes]
 
 def get_rew_measurements():
     try:
@@ -364,7 +366,8 @@ def get_fdw_spectrum(ir_centered, freqs, cycles=5.0, fs=48000):
         t_neg = np.arange(-half_win_samples, 0) / fs
         t_valid = np.concatenate((t_neg, t_pos))
         ir_valid = np.concatenate((ir_centered[-half_win_samples:], ir_centered[:half_win_samples]))
-        win = 0.5 * (1 + np.cos(2 * np.pi * t_valid / win_len_s))
+        # Tukey window (alpha=0.5) matches REW's default behavior better than Hann
+        win = signal.windows.tukey(len(t_valid), alpha=0.5)
         phasor = np.exp(-1j * 2 * np.pi * f * t_valid)
         H_fdw[k] = np.sum(ir_valid * win * phasor)
     return H_fdw
@@ -757,19 +760,27 @@ def detect_auto_house_curve(H_mains_mags, H_sub_mag, freqs, fc, fs):
     
     return house_boost, slope_start_hz, slope_end_hz
 
-def detect_schroeder_statistical(mag_raw, freqs, fs=48000, min_f=80.0, max_f=600.0, window_oct=0.25):
+def detect_schroeder_statistical(mag_raw, freqs, fs=48000, min_f=80.0, max_f=600.0, window_oct=0.25, min_anchor=None):
     """
     Detects the Schroeder frequency by analyzing the statistical variance
-    of the magnitude response. Improved version with percentile-based baseline
-    and trend detection to avoid premature floor detection.
+    of the magnitude response. Improved version with bandwidth checks,
+    tighter thresholds for smooth rooms, and physical geometric anchoring.
     """
+    # 1. Bandwidth Pre-Check: If this is a subwoofer-only sweep, variance above 300Hz is pure noise.
+    idx_bass = (freqs >= 40.0) & (freqs <= 80.0)
+    idx_mid = (freqs >= 300.0) & (freqs <= 600.0)
+    if np.any(idx_bass) and np.any(idx_mid):
+        med_bass = np.median(20 * np.log10(np.maximum(mag_raw[idx_bass], 1e-12)))
+        med_mid = np.median(20 * np.log10(np.maximum(mag_raw[idx_mid], 1e-12)))
+        # If the midrange is >25dB below the bass, it's a dedicated subwoofer sweep.
+        if med_bass - med_mid > 25.0:
+            return 200.0
+
     mag_db = 20 * np.log10(np.maximum(mag_raw, 1e-12))
     
-    # Calculate rolling variance in log-spaced windows
     variances = []
     test_freqs = []
     
-    # Scan with finer steps for better trend detection
     curr_f = min_f
     while curr_f < max_f:
         f_low = curr_f / (2**(window_oct/2))
@@ -780,33 +791,31 @@ def detect_schroeder_statistical(mag_raw, freqs, fs=48000, min_f=80.0, max_f=600
             variances.append(np.std(mag_db[idx]))
             test_freqs.append(curr_f)
         
-        curr_f *= 1.03 # 3% step for more resolution
+        curr_f *= 1.03 
         
     if not variances:
-        return 200.0 # Fallback
+        return 200.0
         
     variances = np.array(variances)
     test_freqs = np.array(test_freqs)
-    
-    # Smooth the variance curve to find the trend
     v_smooth = log_smoothed_fast(variances, test_freqs, fraction=4)
     
-    # establish a stochastic baseline: use the 20th percentile 
-    # of the higher frequency region (above 300Hz)
-    high_freq_idx = test_freqs > 300.0
+    # Clean Baseline: Use the region > 500Hz to establish a truly stochastic reference.
+    high_freq_idx = test_freqs > 500.0
     if np.any(high_freq_idx):
         baseline_v = np.percentile(v_smooth[high_freq_idx], 20)
+        v_spread = np.std(v_smooth[high_freq_idx])
     else:
         baseline_v = np.min(v_smooth)
+        v_spread = 1.0
         
-    # We search from high to low for where the variance consistently rises above 
-    # the baseline by a dynamic threshold (relative to baseline + spread)
-    v_spread = np.std(v_smooth[high_freq_idx]) if np.any(high_freq_idx) else 1.0
-    threshold = baseline_v + max(2.0, v_spread * 2.0)
+    # Tighter Threshold Logic: max(0.4, v_spread * 1.3)
+    # Refined for even better sensitivity in smooth (low channel count) rooms.
+    threshold = baseline_v + max(0.4, v_spread * 1.3)
     
     fc_detected = 250.0
     trend_count = 0
-    required_trend = 3 # Consecutive points above threshold to confirm modal region
+    required_trend = 3 
     
     for i in range(len(v_smooth)-1, 0, -1):
         if v_smooth[i] > threshold:
@@ -815,14 +824,15 @@ def detect_schroeder_statistical(mag_raw, freqs, fs=48000, min_f=80.0, max_f=600
             trend_count = 0
             
         if trend_count >= required_trend:
-            # The Schroeder frequency is where it first crossed the threshold 
-            # (which is the i + required_trend index)
             detected_idx = min(i + required_trend, len(v_smooth)-1)
             fc_detected = test_freqs[detected_idx]
             break
+
+    # Physical Anchor Floor: If dimensions say the room is 300Hz, don't let 
+    # smooth high-frequency comb-filtering dupe us into a 145Hz fallback.
+    if min_anchor is not None:
+        fc_detected = max(fc_detected, min_anchor)
             
-    # Safer fallback: if we still ended up at the floor without a strong trend, 
-    # return a reasonable default for a room (200Hz).
     if fc_detected <= min_f + 5.0:
         fc_detected = 200.0
             
@@ -963,8 +973,9 @@ def run_phase1():
         trans_end = float(config.get('trans_end', 300.0))
         max_boost_low = float(config.get('max_boost_low', 6.0))
         max_boost_high = float(config.get('max_boost_high', 6.0))
+        global_max_boost = float(config.get('global_max_boost', 0.0))
         sub_percentile = float(config.get('sub_percentile', 15.0))
-        global_smoothing = config.get('global_smoothing', 'erb')
+        global_smoothing = config.get('global_smoothing', '6')
         vol_match_low = float(config.get('vol_match_low', 500.0))
         vol_match_high = float(config.get('vol_match_high', 2000.0))
         
@@ -1029,6 +1040,33 @@ def run_phase1():
         measurements = get_rew_measurements()
         freqs = fft.rfftfreq(FILTER_TAPS, 1/TARGET_SAMPLE_RATE)
         
+        # --- Centralized Speaker Data Fetching ---
+        H_mains_mags = {} # id -> mag
+        H_mains_titles = {} # id -> title
+        lr_ids = []
+        for m_id in mains_ids:
+            ir_tmp = fetch_ir_data(m_id)
+            ir_tmp_long = get_centered_ir(ir_tmp, is_lfe=True)
+            H_m_mag = np.abs(fft.rfft(ir_tmp_long))
+            H_mains_mags[m_id] = H_m_mag
+            
+            title = measurements.get(m_id, {}).get('title', '').upper()
+            H_mains_titles[m_id] = title
+            # Match L/R specifically for anchoring symmetry
+            is_l = any(k in title for k in ['(L)', ' L ', ' LEFT', ' SINISTRO', ' LIN']) or title.endswith(' L')
+            is_r = any(k in title for k in ['(R)', ' R ', ' RIGHT', ' DESTRO', ' RECH']) or title.endswith(' R')
+            if is_l or is_r:
+                 lr_ids.append(m_id)
+
+        # Fallback to first two if no specific L/R found
+        if not lr_ids and len(mains_ids) >= 2:
+            lr_ids = [mains_ids[0], mains_ids[1]]
+        elif not lr_ids and len(mains_ids) == 1:
+            lr_ids = [mains_ids[0]]
+
+        H_all_mains_mag_list = list(H_mains_mags.values())
+        H_mains_rms_mag = np.sqrt(np.mean(np.array(H_all_mains_mag_list)**2, axis=0)) if H_all_mains_mag_list else None
+        
         # Common-Ground Crossover Detection
         fc_for_main = {}  # m_id -> fc for that speaker
         if auto_crossover_enabled and not is_full_range_mains:
@@ -1036,10 +1074,9 @@ def run_phase1():
             threshold_db = get_crossover_threshold_db(crossover_mains)
             detected_fcs = []
             for m_id in mains_ids:
-                ir_detect = fetch_ir_data(m_id)
-                ir_detect_long = get_centered_ir(ir_detect, is_lfe=True)
-                H_detect = fft.rfft(ir_detect_long)
-                low_rolloff, _ = detect_speaker_rolloff(np.abs(H_detect), freqs, threshold_db=threshold_db)
+                H_detect = H_mains_mags.get(m_id)
+                if H_detect is None: continue
+                low_rolloff, _ = detect_speaker_rolloff(H_detect, freqs, threshold_db=threshold_db)
                 det_fc = max(low_rolloff, 20.0)
                 detected_fcs.append(det_fc)
                 clog(f"     Main ID {m_id}: rolloff at {det_fc:.1f} Hz")
@@ -1093,32 +1130,70 @@ def run_phase1():
         clog(f"   -> Furthest speaker arrives at {global_anchor_ms:+.3f} ms. This is the global time anchor.")
 
         
-        # VBA Setup
+        # --- Room Mode & Physical Transition Anchor Detection ---
+        schroeder_anchor = None
+        h_anchor_source = None
+        
+        if lfe_id:
+            ir_sub_cached = fetch_ir_data(lfe_id)
+            ir_sub_centered = get_centered_ir(ir_sub_cached, is_lfe=True)
+            h_anchor_source = np.abs(fft.rfft(ir_sub_centered))
+            clog("\n  -> Analyzing Room Modes for Physical Schroeder Anchoring (using Subwoofer)...")
+        elif lr_ids and H_mains_rms_mag is not None:
+            # Check if L/R are full range enough for anchoring (RMS of the pair)
+            H_lr_mag_list = [H_mains_mags[m_id] for m_id in lr_ids]
+            H_lr_rms_mag = np.sqrt(np.mean(np.array(H_lr_mag_list)**2, axis=0))
+            lr_low, _ = detect_speaker_rolloff(H_lr_rms_mag, freqs)
+            
+            if lr_low <= 30.0: # If they play deep enough to catch fundamental modes (usually >30Hz)
+                h_anchor_source = H_lr_rms_mag
+                clog(f"\n  -> Analyzing Room Modes for Physical Schroeder Anchoring (using L/R Mains: {', '.join(lr_ids)})...")
+            else:
+                clog("\n  -> Mains do not have enough extension for physical anchoring. Using statistical only.")
+
+        # VBA Default State
         vba_enabled = config.get('vba_enabled', True)
         vba_modes = []
         vba_attn_db = float(config.get('vba_attn_db', -4.0))
         vba_taps = int(config.get('vba_taps', 4))
         ir_sub_cached = None
-        
-        if lfe_id and vba_enabled:
-            clog("\n  -> Fetching Subwoofer data to automatically detect room modes...")
-            ir_sub_cached = fetch_ir_data(lfe_id)
-            ir_sub_centered = get_centered_ir(ir_sub_cached, is_lfe=True)
-            H_lfe_raw = fft.rfft(ir_sub_centered)
-            
+
+        if h_anchor_source is not None:
+            # Detect primary axial modes regardless of VBA toggle
             raw_modes_input = config.get('vba_modes_raw', '').strip()
             if raw_modes_input:
-                vba_modes = [float(x.strip()) for x in raw_modes_input.split(',') if x.strip()]
-                clog(f"  -> Using manual VBA modes: {vba_modes}")
+                detected_vba_modes = [float(x.strip()) for x in raw_modes_input.split(',') if x.strip()]
             else:
-                detected = detect_room_modes(freqs, np.abs(H_lfe_raw))
-                if detected:
-                    clog(f"  -> Successfully auto-detected {len(detected)} prominent mode(s):")
-                    for i, (mf, mp) in enumerate(detected):
-                        clog(f"     Mode {i+1}: {mf:.1f} Hz (Prominence: +{mp:.1f} dB)")
-                    vba_modes = [mf for mf, mp in detected]
-                else:
+                # 30Hz Floor for Schroeder Anchor: Ignores sub-bass cabin gain/pressurization.
+                detected_modes = detect_room_modes(freqs, h_anchor_source, min_freq=30.0)
+                detected_vba_modes = [mf for mf, mp in detected_modes] if detected_modes else []
+            
+            if detected_vba_modes:
+                # 1. Estimate Physical Schroeder Floor from Dimensions
+                f_modes = sorted(detected_vba_modes)
+                L_m = 343.0 / (2.0 * f_modes[0])
+                # Width: If second mode exists, use it. Otherwise assume universal 0.8 L:W ratio for residential.
+                W_m = 343.0 / (2.0 * f_modes[1]) if len(f_modes) >= 2 else L_m * 0.8
+                H_m = 2.4 # Standard residential ceiling
+                V_m3 = L_m * W_m * H_m
+                
+                # Equation: Fs = 2000 * sqrt(RT60 / V) | RT60 approx 0.45s 
+                schroeder_anchor = 2000.0 * np.sqrt(0.45 / V_m3)
+                clog(f"     Detected Room Modes (>30Hz): {', '.join([f'{m:.1f}Hz' for m in detected_vba_modes])}")
+                clog(f"     Geometric Sanity Guard: Estimated {L_m:.1f}m x {W_m:.1f}m Room ({V_m3:.1f}m³), Anchor: {schroeder_anchor:.1f} Hz")
+            
+            # VBA Setup: ONLY if a subwoofer is present
+            if lfe_id and vba_enabled:
+                vba_modes = detected_vba_modes
+                if not vba_modes:
                     clog("  -> Could not auto-detect modes. VBA will be skipped.")
+                else:
+                    clog(f"  -> VBA Active using {len(vba_modes)} modes.")
+            else:
+                vba_enabled = False # Skip VBA for non-subwoofer systems
+        else:
+            # No anchor source available
+            vba_enabled = False
         
         # Step 2: MAINS Processing
         
@@ -1135,15 +1210,7 @@ def run_phase1():
         # Auto Transition Detection
         if auto_transition_enabled and len(mains_ids) > 0:
             try:
-                # Use the vector average magnitude for more stable detection
-                H_mains_mag_list = []
-                for m_id in mains_ids:
-                    ir_tmp = fetch_ir_data(m_id)
-                    ir_tmp_long = get_centered_ir(ir_tmp, is_lfe=True)
-                    H_mains_mag_list.append(np.abs(fft.rfft(ir_tmp_long)))
-                H_mains_rms_mag = np.sqrt(np.mean(np.array(H_mains_mag_list)**2, axis=0))
-                
-                schroeder_fc = detect_schroeder_statistical(H_mains_rms_mag, freqs, fs=TARGET_SAMPLE_RATE)
+                schroeder_fc = detect_schroeder_statistical(H_mains_rms_mag, freqs, fs=TARGET_SAMPLE_RATE, min_anchor=schroeder_anchor)
                 trans_start = schroeder_fc * 0.8  # transition starts slightly below
                 trans_end = schroeder_fc * 1.5    # ends well above to ensure stochastic region
                 clog(f"  -> Auto Transition: Detected Schroeder Frequency at {schroeder_fc:.1f} Hz. Blending: {trans_start:.0f}Hz - {trans_end:.0f}Hz.")
@@ -1151,17 +1218,10 @@ def run_phase1():
                 clog(f"  -> Auto Transition failed: {e}. Falling back to manual {trans_start:.0f}Hz - {trans_end:.0f}Hz.")
 
         clog(f"\n[2] Processing Mains ({fdw_cycles}-Cycle FDW, Phase Linearization)...")
-        # Full-range rolloff detection from vector average (before per-speaker loop)
-        mains_rolloff_low = fc / 2.0  # default: same as standard mode
+        mains_rolloff_low = fc_sub / 2.0
         mains_rolloff_high = 20000.0
         if is_full_range_mains or auto_house_curve_enabled:
-            # Compute RMS magnitude average of all mains (avoids phase cancellation between misaligned speakers)
-            H_mains_mag_list = []
-            for m_id in mains_ids:
-                ir_tmp = fetch_ir_data(m_id)
-                ir_tmp_long = get_centered_ir(ir_tmp, is_lfe=True)
-                H_mains_mag_list.append(np.abs(fft.rfft(ir_tmp_long)))
-            H_mains_rms_mag = np.sqrt(np.mean(np.array(H_mains_mag_list)**2, axis=0))
+            # We already have H_mains_rms_mag calculated above
             
             if is_full_range_mains:
                 mains_rolloff_low, mains_rolloff_high = detect_speaker_rolloff(H_mains_rms_mag, freqs)
@@ -1180,12 +1240,15 @@ def run_phase1():
                 try:
                     sub_mag = None
                     if lfe_id:
-                        ir_sub_raw = fetch_ir_data(lfe_id)
-                        ir_sub_l = get_centered_ir(ir_sub_raw, is_lfe=True)
+                        if 'ir_sub_cached' in locals() and ir_sub_cached is not None:
+                            ir_sub_l = get_centered_ir(ir_sub_cached, is_lfe=True)
+                        else:
+                            ir_sub_raw = fetch_ir_data(lfe_id)
+                            ir_sub_l = get_centered_ir(ir_sub_raw, is_lfe=True)
                         sub_mag = np.abs(fft.rfft(ir_sub_l))
                     
                     house_boost, house_start, house_end = detect_auto_house_curve(
-                        H_mains_mag_list, sub_mag, freqs, fc_sub, fs=TARGET_SAMPLE_RATE
+                        H_all_mains_mag_list, sub_mag, freqs, fc_sub, fs=TARGET_SAMPLE_RATE
                     )
                     clog(f"  -> Auto House Curve detected: +{house_boost:.1f} dB (Slope: {house_start:.0f} Hz - {house_end:.0f} Hz)")
                 except Exception as e:
@@ -1408,6 +1471,14 @@ def run_phase1():
                     clog(f"  -> Applied Mixed-Phase Design (crossover: {mixed_phase_crossover_hz:.0f} Hz)")
                 else:
                     target_phase = -smoothed_excess_phase_windowed
+                    
+                    # --- Compensation for Auto-Crossover Phase Rotation ---
+                    # When auto-crossover is enabled, the crossover slope is baked into the minimum-phase 
+                    # magnitude EQ. Here we neutralize that rotation if "Linear Phase" is selected.
+                    if auto_crossover_enabled and not is_full_range_mains and phase_mains == 'linear':
+                        H_acoustic_min = generate_crossover(freqs, fc_for_main[m_id], 'highpass', crossover_type=crossover_mains, phase_type='minimum')
+                        target_phase -= np.angle(H_acoustic_min)
+                        clog(f"  -> Neutralized acoustic crossover phase rotation ({crossover_mains} @ {fc_for_main[m_id]:.1f} Hz)")
                     
                     if auto_prc_enabled and preringing_reduction:
                         try:
@@ -1886,6 +1957,7 @@ def run_phase1():
             'sub_percentile': sub_percentile,
             'global_smoothing': global_smoothing,
             'max_boost_high': max_boost_high,
+            'global_max_boost': global_max_boost,
             'regularized_inversion': regularized_inversion,
             'reg_beta_db': reg_beta_db,
             'mains_bandlimit_high_enabled': mains_bandlimit_high_enabled,
@@ -1898,7 +1970,10 @@ def run_phase1():
             'fc_for_main': fc_for_main,
             'fc_sub': fc_sub,
             'auto_crossover_enabled': auto_crossover_enabled,
-            'is_full_range_mains': is_full_range_mains
+            'is_full_range_mains': is_full_range_mains,
+            'trans_start': trans_start,
+            'trans_end': trans_end,
+            'fdw_cycles': fdw_cycles
         })
 
         return jsonify({'status': 'success', 'message': '\n'.join(console_log)})
@@ -1929,6 +2004,7 @@ def run_phase2():
         auto_target_curve = request.json.get('auto_target_curve', False)
         auto_target_start_hz = float(request.json.get('auto_target_start_hz', 2000.0))
         auto_sub_alignment = request.json.get('auto_sub_alignment', True)
+        sub_alignment_mode = request.json.get('sub_alignment_mode', 'phase_coherence')
         global_eq_apply_freq_limits = request.json.get('global_eq_apply_freq_limits', False)
         
         clog("\n[6] Baking Phase Alignment Delays into Final Filters...")
@@ -1966,9 +2042,10 @@ def run_phase2():
 
         lfe_id = APP_STATE.get('lfe_id')
         if lfe_id and APP_STATE.get('H_eq_min_phase') is not None:
-            # Automatic Subwoofer Alignment via Group Delay matching
+            # Automatic Subwoofer Alignment
             if auto_sub_alignment and mains_firs_complex:
-                clog(f"\n  -> Optimizing Subwoofer delay to match mains group delay (crossover region: {fc_sub/2:.0f}-{fc_sub*2:.0f} Hz)...")
+                mode_desc = "Best Phase Coherence" if sub_alignment_mode == "phase_coherence" else "Lowest Group Delay"
+                clog(f"\n  -> Optimizing Subwoofer delay for {mode_desc} (crossover region: {fc_sub/2:.0f}-{fc_sub*2:.0f} Hz)...")
                 
                 # Fetch raw IRs and generate corrected systems for Mains
                 H_mains_systems = []
@@ -1983,21 +2060,6 @@ def run_phase2():
                 
                 # Vector average of corrected mains
                 H_mains_avg = np.mean(H_mains_systems, axis=0)
-                
-                # --- Compute mains reference group delay (high frequency average) ---
-                omega = 2 * np.pi * freqs
-                omega_diff = np.maximum(np.diff(omega), 1e-20)
-                
-                mains_phase = np.unwrap(np.angle(H_mains_avg))
-                gd_mains = np.zeros_like(freqs)
-                gd_mains[1:] = -np.diff(mains_phase) / omega_diff
-                gd_mains[0] = gd_mains[1]
-                
-                # Reference band: 500 Hz – 2 kHz (stable region well above crossover)
-                gd_ref_low, gd_ref_high = 500.0, 2000.0
-                idx_ref = (freqs >= gd_ref_low) & (freqs <= gd_ref_high)
-                gd_mains_ref = np.mean(gd_mains[idx_ref]) if np.any(idx_ref) else 0.0
-                clog(f"     Mains reference GD ({gd_ref_low:.0f}-{gd_ref_high:.0f} Hz): {gd_mains_ref*1000:.3f} ms")
                 
                 # Fetch raw IR for the Subwoofer
                 ir_sub_cached = fetch_ir_data(lfe_id)
@@ -2014,34 +2076,81 @@ def run_phase2():
                 sub_gd_high = fc_sub * 2.0
                 idx_sub_band = (freqs >= sub_gd_low) & (freqs <= sub_gd_high)
                 
-                def gd_match_objective(delta_t_ms):
-                    total_sub_delay_s = target_base_sub_delay + (delta_t_ms / 1000.0)
-                    delay_shift_rads = -2 * np.pi * freqs * total_sub_delay_s
-                    H_sub_shifted = H_sub_sys_corrected * np.exp(1j * delay_shift_rads)
-                    
-                    phase_sub_unwrapped = np.unwrap(np.angle(H_sub_shifted))
-                    gd_sub = np.zeros_like(freqs)
-                    gd_sub[1:] = -np.diff(phase_sub_unwrapped) / omega_diff
-                    gd_sub[0] = gd_sub[1]
-                    
-                    if np.any(idx_sub_band):
-                        avg_gd_sub = np.mean(gd_sub[idx_sub_band])
-                        return (avg_gd_sub - gd_mains_ref) ** 2
-                    return float('inf')
+                omega = 2 * np.pi * freqs
+                omega_diff = np.maximum(np.diff(omega), 1e-20)
 
-                res = minimize_scalar(gd_match_objective, bounds=(-20.0, 20.0), method='bounded')
+                if sub_alignment_mode == 'group_delay':
+                    # --- Compute mains reference group delay (high frequency average) ---
+                    mains_phase = np.unwrap(np.angle(H_mains_avg))
+                    gd_mains = np.zeros_like(freqs)
+                    gd_mains[1:] = -np.diff(mains_phase) / omega_diff
+                    gd_mains[0] = gd_mains[1]
+                    
+                    # Reference band: 500 Hz – 2 kHz (stable region well above crossover)
+                    gd_ref_low, gd_ref_high = 500.0, 2000.0
+                    idx_ref = (freqs >= gd_ref_low) & (freqs <= gd_ref_high)
+                    gd_mains_ref = np.mean(gd_mains[idx_ref]) if np.any(idx_ref) else 0.0
+                    clog(f"     Mains reference GD ({gd_ref_low:.0f}-{gd_ref_high:.0f} Hz): {gd_mains_ref*1000:.3f} ms")
+
+                    def gd_match_objective(delta_t_ms):
+                        total_sub_delay_s = target_base_sub_delay + (delta_t_ms / 1000.0)
+                        delay_shift_rads = -2 * np.pi * freqs * total_sub_delay_s
+                        H_sub_shifted = H_sub_sys_corrected * np.exp(1j * delay_shift_rads)
+                        
+                        phase_sub_unwrapped = np.unwrap(np.angle(H_sub_shifted))
+                        gd_sub = np.zeros_like(freqs)
+                        gd_sub[1:] = -np.diff(phase_sub_unwrapped) / omega_diff
+                        gd_sub[0] = gd_sub[1]
+                        
+                        if np.any(idx_sub_band):
+                            avg_gd_sub = np.mean(gd_sub[idx_sub_band])
+                            return (avg_gd_sub - gd_mains_ref) ** 2
+                        return float('inf')
+                    
+                    objective_func = gd_match_objective
+                else:
+                    # --- Phase Coherence: Maximize phase linearity (closest to 0 degrees) relative to anchor ---
+                    def phase_coherence_objective(delta_t_ms):
+                        total_sub_delay_s = target_base_sub_delay + (delta_t_ms / 1000.0)
+                        delay_shift_rads = -2 * np.pi * freqs * total_sub_delay_s
+                        H_sub_shifted = H_sub_sys_corrected * np.exp(1j * delay_shift_rads)
+                        
+                        if np.any(idx_sub_band):
+                            # Combined response
+                            v_sum = H_mains_avg[idx_sub_band] + H_sub_shifted[idx_sub_band]
+                            # Rotation to align the system anchor (target_base_delay_s) to 0 phase
+                            anchor_rot = np.exp(1j * 2 * np.pi * freqs[idx_sub_band] * APP_STATE['target_base_delay_s'])
+                            # Rotate the sum to the anchor reference frame
+                            v_sum_aligned = v_sum * anchor_rot
+                            # We want to maximize the real part of this sum (coherence at 0 deg)
+                            # Minimize negative to maximize
+                            return -np.sum(np.real(v_sum_aligned))
+                        return 0.0
+                    
+                    objective_func = phase_coherence_objective
+
+                res = minimize_scalar(objective_func, bounds=(-20.0, 20.0), method='bounded')
                 if res.success:
                     align_lfe_ms = res.x
-                    # Log the final sub GD for verification
+                    # Log the final metrics for verification
                     final_sub_delay_s = target_base_sub_delay + (align_lfe_ms / 1000.0)
                     H_sub_final_check = H_sub_sys_corrected * np.exp(-1j * 2 * np.pi * freqs * final_sub_delay_s)
-                    phase_sub_final = np.unwrap(np.angle(H_sub_final_check))
-                    gd_sub_final = np.zeros_like(freqs)
-                    gd_sub_final[1:] = -np.diff(phase_sub_final) / omega_diff
-                    gd_sub_final[0] = gd_sub_final[1]
-                    avg_gd_sub_final = np.mean(gd_sub_final[idx_sub_band]) if np.any(idx_sub_band) else 0.0
-                    clog(f"     Sub GD ({sub_gd_low:.0f}-{sub_gd_high:.0f} Hz) after alignment: {avg_gd_sub_final*1000:.3f} ms")
-                    clog(f"     ✅ Optimal Subwoofer Delay Shift Found: {align_lfe_ms:+.2f} ms (GD error: {abs(avg_gd_sub_final - gd_mains_ref)*1000:.3f} ms)")
+                    
+                    if sub_alignment_mode == 'group_delay':
+                        phase_sub_final = np.unwrap(np.angle(H_sub_final_check))
+                        gd_sub_final = np.zeros_like(freqs)
+                        gd_sub_final[1:] = -np.diff(phase_sub_final) / omega_diff
+                        gd_sub_final[0] = gd_sub_final[1]
+                        avg_gd_sub_final = np.mean(gd_sub_final[idx_sub_band]) if np.any(idx_sub_band) else 0.0
+                        clog(f"     Sub GD ({sub_gd_low:.0f}-{sub_gd_high:.0f} Hz) after alignment: {avg_gd_sub_final*1000:.3f} ms")
+                        clog(f"     ✅ Optimal Subwoofer Delay Shift Found: {align_lfe_ms:+.2f} ms (GD error: {abs(avg_gd_sub_final - gd_mains_ref)*1000:.3f} ms)")
+                    else:
+                        v_sum_final = H_mains_avg[idx_sub_band] + H_sub_final_check[idx_sub_band]
+                        # Final phase check relative to anchor
+                        anchor_rot = np.exp(1j * 2 * np.pi * freqs[idx_sub_band] * APP_STATE['target_base_delay_s'])
+                        v_sum_final_aligned = v_sum_final * anchor_rot
+                        avg_phase_err = np.rad2deg(np.angle(np.mean(v_sum_final_aligned)))
+                        clog(f"     ✅ Optimal Subwoofer Delay Shift Found: {align_lfe_ms:+.2f} ms (System Phase Offset: {avg_phase_err:.2f}°)")
                 else:
                     clog("     ⚠️ Optimization failed, falling back to 0.0 ms.")
                     align_lfe_ms = 0.0
@@ -2151,19 +2260,133 @@ def run_phase2():
             # Convert back to linear magnitude for math
             mag_global = 10 ** (rew_mag_db_interp / 20.0)
             mag_global = np.maximum(mag_global, 1e-12)
+            global_eq_hybrid_enabled = request.json.get('global_eq_hybrid_enabled', True)
             
-            # Apply chosen user smoothing
-            global_smoothing = APP_STATE.get('global_smoothing', 'erb')
-            if global_smoothing == 'erb':
-                mag_total_smoothed = erb_smoothed_fast(mag_global, freqs)
-            elif global_smoothing == 'variable':
-                mag_total_smoothed = log_smoothed_fast(mag_global, freqs, variable=True)
-            else:
+            # Fetch common smoothing settings from request first, fall back to APP_STATE
+            global_smoothing = request.json.get('global_smoothing', APP_STATE.get('global_smoothing', '6'))
+            global_max_boost = request.json.get('global_max_boost', APP_STATE.get('global_max_boost', 0.0))
+            
+            def smooth_mag(m):
+                if global_smoothing == 'erb':
+                    return erb_smoothed_fast(m, freqs)
+                elif global_smoothing == 'variable':
+                    return log_smoothed_fast(m, freqs, variable=True)
+                else:
+                    try:
+                        frac = float(global_smoothing)
+                        return log_smoothed_fast(m, freqs, fraction=frac, variable=False)
+                    except ValueError:
+                        return erb_smoothed_fast(m, freqs)
+
+            # 1. Steady-State Magnitude (the standard REW magnitude)
+            mag_total_smoothed = smooth_mag(mag_global)
+            
+            # 2. Optional: Direct Sound Magnitude (FDW)
+            if global_eq_hybrid_enabled:
                 try:
-                    frac = float(global_smoothing)
-                    mag_total_smoothed = log_smoothed_fast(mag_global, freqs, fraction=frac, variable=False)
-                except ValueError:
-                    mag_total_smoothed = erb_smoothed_fast(mag_global, freqs)
+                    fdw_cycles = APP_STATE.get('fdw_cycles', 5.0)
+                    trans_start = APP_STATE.get('trans_start', 200.0)
+                    clog(f"  -> Global EQ: Outsourcing Hybrid Direct Sound Blend to REW API ({fdw_cycles:.1f}-Cycle FDW, Merge at {trans_start:.0f}Hz)...")
+                    
+                    # 1. Duplicate the global measurement TWICE in REW
+                    # Clone A: Will become the High Frequencies (FDW)
+                    # Clone B: Will become the Low Frequencies (Smoothed Steady-State)
+                    
+                    old_meas = requests.get(f"{REW_API_URL}/measurements").json()
+                    old_count = len(old_meas)
+                    
+                    dup_req = {
+                        "processName": "Arithmetic",
+                        "measurementIndices": [int(global_id), int(global_id)],
+                        "parameters": {"function": "(A + B) / 2"}
+                    }
+                    requests.post(f"{REW_API_URL}/measurements/process-measurements", json=dup_req)
+                    requests.post(f"{REW_API_URL}/measurements/process-measurements", json=dup_req)
+                    
+                    # Wait for both duplicates to appear
+                    start_wait = time.time()
+                    while time.time() - start_wait < 10:
+                        all_meas = requests.get(f"{REW_API_URL}/measurements").json()
+                        if len(all_meas) >= old_count + 2:
+                            break
+                        time.sleep(0.5)
+                        
+                    meas_keys = list(all_meas.keys())
+                    clone_a_id = meas_keys[-2]  # FDW (Highs)
+                    clone_b_id = meas_keys[-1]  # Steady-State (Lows)
+                    
+                    # 2. Apply FDW to Clone A (Highs)
+                    fdw_req = {
+                        "addFDW": True,
+                        "fdwWidthCycles": fdw_cycles,
+                        "leftWindowType": "Tukey 0.5",
+                        "rightWindowType": "Tukey 0.5"
+                    }
+                    requests.post(f"{REW_API_URL}/measurements/{clone_a_id}/ir-windows", json=fdw_req)
+                    
+                    # 3. Merge B (Lows/Steady-State) to A (Highs/FDW)
+                    # Note: We skip sending a Smooth API request to REW on Clone B because 
+                    # REW Trace Arithmetic completely ignores smoothing metadata.
+                    # We will apply the Python smoothing dynamically to the resulting blend.
+                    merge_req = {
+                        "processName": "Arithmetic",
+                        "measurementIndices": [int(clone_a_id), int(clone_b_id)],
+                        "parameters": {
+                            "function": "Merge B to A",
+                            "mergeFrequency": trans_start,
+                            "mergeBlend": True
+                        }
+                    }
+                    
+                    old_meas_before_merge = requests.get(f"{REW_API_URL}/measurements").json()
+                    old_count_merge = len(old_meas_before_merge)
+                    
+                    requests.post(f"{REW_API_URL}/measurements/process-measurements", json=merge_req)
+                    
+                    # Wait for merge result to appear
+                    start_wait_merge = time.time()
+                    final_id = None
+                    while time.time() - start_wait_merge < 10:
+                        all_meas_final = requests.get(f"{REW_API_URL}/measurements").json()
+                        if len(all_meas_final) > old_count_merge:
+                            final_id = list(all_meas_final.keys())[-1]
+                            break
+                        time.sleep(0.5)
+                        
+                    if not final_id:
+                        raise ValueError("Timeout waiting for REW to finish Merge B to A arithmetic.")
+                    
+                    # Find the final merged measurement ID
+                    all_meas_final = requests.get(f"{REW_API_URL}/measurements").json()
+                    final_id = list(all_meas_final.keys())[-1]
+                    
+                    # 5. Fetch the final blended frequency response
+                    final_freqs, final_mags_db = fetch_fr_data(final_id)
+                    
+                    # REW's trace arithmetic outputs Frequency Response magnitudes in dB SPL!
+                    # We must convert this back to linear magnitude for our DSP math (Kirkeby).
+                    final_mags_linear = 10 ** (final_mags_db / 20.0)
+                    
+                    # Interpolate back to our standard exact frequency bins in case REW trimmed or altered the length
+                    mag_total_blended = np.interp(freqs, final_freqs, final_mags_linear)
+                    
+                    # Apply selected smoothing dynamically ONLY below the blending frequency
+                    mag_blended_smoothed = smooth_mag(mag_total_blended)
+                    
+                    W_smooth = np.zeros_like(freqs)
+                    blend_start_hz = trans_start * 0.707
+                    blend_end_hz = trans_start * 1.414
+                    
+                    W_smooth[freqs <= blend_start_hz] = 1.0
+                    idx_trans = (freqs > blend_start_hz) & (freqs < blend_end_hz)
+                    if np.any(idx_trans):
+                        W_smooth[idx_trans] = 0.5 * (1 + np.cos(np.pi * (freqs[idx_trans] - blend_start_hz) / (blend_end_hz - blend_start_hz)))
+                        
+                    mag_total_smoothed = (mag_blended_smoothed * W_smooth) + (mag_total_blended * (1.0 - W_smooth))
+                    
+                    clog(f"     ✅ Hybrid Blend generated in REW API (Measurement ID: {final_id})")
+                except Exception as e:
+                    clog(f"     ⚠️ Hybrid Global EQ failed: {e}. Falling back to standard Steady-State.")
             
             # Retrieve parameters for target line
             house_boost = APP_STATE.get('house_boost', 6.0)
@@ -2225,18 +2448,24 @@ def run_phase2():
                         W_auto[idx_blend] = 0.5 * (1 - np.cos(np.pi * (freqs[idx_blend] - blend_start) / (blend_end - blend_start)))
                         
                     target_curve = (target_curve * (1 - W_auto)) + (natural_curve_mag * W_auto)
+                    clog("     ⚠️ NOTE: Auto-Target Curve is ON. The EQ will preserve the natural HF tilt instead of forcing it flat.")
+            elif global_eq_hybrid_enabled:
+                clog("     ℹ️ Auto-Target Curve is OFF. The EQ will aggressively flatten the high-frequency Direct Sound.")
             
             # 3. Generate EQ: Kirkeby regularized or classic inversion
             regularized_inversion = APP_STATE.get('regularized_inversion', True)
             reg_beta_db = APP_STATE.get('reg_beta_db', 12.0)
             
             if regularized_inversion:
-                eq_mag_global = kirkeby_regularized_inverse(mag_total_smoothed, freqs, target_curve, beta_db=reg_beta_db)
-                eq_mag_global = np.clip(eq_mag_global, 1e-4, 10 ** (max_boost_high / 20.0))
-                clog(f"  -> Global EQ: Kirkeby Regularized Inversion (β={reg_beta_db:.1f} dB)")
+                # Use reduced regularization for Global Pass to allow precise flattening of the Direct Sound (Highs)
+                # Standard beta of 12dB is great for speakers, but the global "Finish" layer should be more aggressive.
+                global_beta_db = max(reg_beta_db + 6.0, 18.0) # Higher beta dB means LOWER linear beta (more aggressive correction)
+                eq_mag_global = kirkeby_regularized_inverse(mag_total_smoothed, freqs, target_curve, beta_db=global_beta_db)
+                eq_mag_global = np.clip(eq_mag_global, 1e-4, 10 ** (global_max_boost / 20.0))
+                clog(f"  -> Global EQ: Precise Inversion (β={global_beta_db:.1f} dB)")
             else:
                 eq_mag_global = target_curve / np.maximum(mag_total_smoothed, 1e-12)
-                eq_mag_global = np.clip(eq_mag_global, 1e-4, 10 ** (max_boost_high / 20.0))
+                eq_mag_global = np.clip(eq_mag_global, 1e-4, 10 ** (global_max_boost / 20.0))
             
             # 4. Optionally apply Phase 1 frequency band-limits to Global EQ
             if global_eq_apply_freq_limits:
@@ -2285,7 +2514,7 @@ def run_phase2():
             
             clog(f"  -> Global Target Curve anchored perfectly flat to mids ({vol_match_low}Hz-{vol_match_high}Hz).")
             clog(f"  -> Applied {global_smoothing.upper() if global_smoothing in ['erb', 'variable'] else f'1/{global_smoothing} Octave'} smoothing.")
-            clog(f"  -> Generated Minimum Phase Global EQ (Unlimited cutting allowed, Max Boost +{max_boost_high}dB).")
+            clog(f"  -> Generated Minimum Phase Global EQ (Unlimited cutting allowed, Max Boost +{global_max_boost}dB).")
             
             # Default Global FIR from Minimum Phase magnitude correction
             H_global_final = H_global_min_phase
