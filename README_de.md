@@ -1,6 +1,6 @@
 Wenn Ihnen die App gefällt, können Sie mich unter https://ko-fi.com/xpoiler unterstützen. Jede Spende wird sehr geschätzt, XPDRC wird für immer kostenlos bleiben!
 
-# XPDRC 1.2 Web DSP
+# XPDRC 1.3 Web DSP
 
 Willkommen bei XPDRC. Diese Anwendung ist ein fortschrittliches Werkzeug zur Generierung von Filtern für die digitale Signalverarbeitung mit einer Weboberfläche, die direkt mit der Room EQ Wizard API kommuniziert, um rohe Impulsantworten zu extrahieren. Durch die Verarbeitung der von REW generierten nativen Impulsantworten ohne zwischengeschaltete Text- oder Wellenformkonvertierungen generiert XPDRC latenzfreie Minimalphasen- oder latenzoptimierte Linearphasen-/Mixed-Phase-Filter für die Raumakustikkorrektur.
 
