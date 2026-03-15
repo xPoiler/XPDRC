@@ -380,6 +380,21 @@ def generate_final_fir(H_complex, freqs, delay_s, log_func=print, is_lin_phase=T
     frac_shift_s = (total_samples - int_shift) / TARGET_SAMPLE_RATE
     H_shifted = H_complex * np.exp(1j * -2.0 * np.pi * freqs * frac_shift_s)
     h_time = fft.irfft(H_shifted, n=FILTER_TAPS)
+    
+    # Safety guard against circular wrap-around of pre-ringing energy
+    if is_lin_phase and int_shift > 0:
+        safety_start = FILTER_TAPS // 2
+        safety_end = FILTER_TAPS - int_shift
+        if safety_end > safety_start:
+            fade_len = int(TARGET_SAMPLE_RATE * 0.050) # 50ms fade
+            if safety_end - safety_start > fade_len * 2:
+                win_fade = np.ones_like(h_time)
+                t_fade = np.linspace(0, 1, fade_len)
+                win_fade[safety_start:safety_start+fade_len] = 0.5 * (1 + np.cos(np.pi * t_fade))
+                win_fade[safety_start+fade_len:safety_end-fade_len] = 0.0
+                win_fade[safety_end-fade_len:safety_end] = 0.5 * (1 - np.cos(np.pi * t_fade))
+                h_time *= win_fade
+
     h_causal = np.roll(h_time, max(0, min(int_shift, FILTER_TAPS-1)))
     asym_win = np.ones(FILTER_TAPS)
     
