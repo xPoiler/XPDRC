@@ -106,7 +106,7 @@ For a comprehensive breakdown of exactly how the digital signal processing algor
 
 **THIS APP HAS BEEN TESTED ONLY ON REW 5.40 BETA VERSION 116 and Version 118** other versions could face issues with filter generation
 
-Please note that XPDRC version 1.2 is currently in Beta. While the core default settings of the  digital signal processing generation pipeline are heavily tested, some features combinations might not work perfectly across all computing environments just yet.
+Please note that XPDRC version 1.3 is currently in Beta. While the core default settings of the  digital signal processing generation pipeline are heavily tested, some features combinations might not work perfectly across all computing environments just yet.
 
 Do note that depending your configuration, ringing artifacts could still be audible, the script does its best to limit it but being automatic and higly dependent on your measurements some of these decisions might be wrong, if this happens adjust parameters or disable phase linearization
 
